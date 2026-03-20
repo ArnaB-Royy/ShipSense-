@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const WORDS = ["ON TIME.", "EVERY DELAY.", "EVERY ROUTE.", "THE FUTURE."];
 
@@ -32,6 +33,7 @@ export default function HomePageLight({ toggleTheme }) {
   const [displayed, setDisplayed] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [visible, setVisible] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const link = document.createElement("link");
@@ -59,6 +61,14 @@ export default function HomePageLight({ toggleTheme }) {
 
   const hover = { transition: "transform 0.25s, box-shadow 0.25s" };
 
+  const navLinks = [
+    { label: "About", path: "/about" },
+    { label: "Partners", path: "#" },
+    { label: "Features", path: "/features" },
+    { label: "Team", path: "#" },
+    { label: "Contact", path: "#" },
+  ];
+
   return (
     <div style={{ background: C.bg, color: C.ink, fontFamily: font.body, overflowX: "hidden" }}>
 
@@ -74,8 +84,8 @@ export default function HomePageLight({ toggleTheme }) {
         .light-nav-link:hover { color: ${C.rose}; }
         .light-footer-link { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: ${C.inkFaint}; text-decoration: none; transition: color 0.2s; font-family: ${font.body}; }
         .light-footer-link:hover { color: ${C.rose}; }
-        .toggle-track { width: 44px; height: 24px; border-radius: 999px; background: rgba(201,132,138,0.15); border: 1px solid rgba(196,163,90,0.3); position: relative; transition: background 0.3s; cursor: pointer; }
-        .toggle-thumb { position: absolute; top: 3px; left: 22px; width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(135deg, #c9848a, #c4a35a); transition: transform 0.3s; }
+        .toggle-track { width: 44px; height: 24px; border-radius: 999px; background: rgba(201,132,138,0.15); border: 1px solid rgba(196,163,90,0.3); position: relative; cursor: pointer; }
+        .toggle-thumb { position: absolute; top: 3px; left: 22px; width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(135deg, #c9848a, #c4a35a); }
       `}</style>
 
       {/* NAVBAR */}
@@ -85,33 +95,31 @@ export default function HomePageLight({ toggleTheme }) {
         zIndex: 100, background: "rgba(250,246,240,0.88)", backdropFilter: "blur(20px)",
         borderBottom: `1px solid ${C.border}`,
       }}>
-
-        {/* LOGO — Dancing Script cursive */}
-        <div style={{
-          fontFamily: font.cursive, fontSize: "2.2rem", fontWeight: 600,
-          background: `linear-gradient(90deg, ${C.rose}, ${C.gold})`,
-          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-          letterSpacing: "1px"
-        }}>
+        <div
+          onClick={(e) => { e.stopPropagation(); navigate("/"); }}
+          style={{ fontFamily: font.cursive, fontSize: "2.2rem", fontWeight: 600, background: `linear-gradient(90deg, ${C.rose}, ${C.gold})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "1px", cursor: "pointer" }}
+        >
           ShipSense
         </div>
-
         <ul style={{ display: "flex", gap: "2.5rem", listStyle: "none", margin: 0, padding: 0 }}>
-          {["About", "Platform", "Features", "Contact"].map(l => (
-            <li key={l}><a href="#" className="light-nav-link">{l}</a></li>
+          {navLinks.map(l => (
+            <li key={l.label}>
+              <a
+                href="#"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (l.path !== "#") navigate(l.path); }}
+                className="light-nav-link"
+              >
+                {l.label}
+              </a>
+            </li>
           ))}
         </ul>
-
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          {/* THEME TOGGLE */}
           <div onClick={toggleTheme} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
             <span style={{ fontSize: "0.85rem" }}>🌙</span>
-            <div className="toggle-track">
-              <div className="toggle-thumb" />
-            </div>
+            <div className="toggle-track"><div className="toggle-thumb" /></div>
             <span style={{ fontSize: "0.85rem" }}>☀️</span>
           </div>
-
           <button style={{
             background: `linear-gradient(135deg, ${C.rose}, ${C.gold})`,
             color: "#fff", border: "none", padding: "0.65rem 1.8rem",
@@ -131,15 +139,11 @@ export default function HomePageLight({ toggleTheme }) {
         alignItems: "center", padding: "8rem 4rem 4rem",
         position: "relative", overflow: "hidden", gap: "4rem"
       }}>
-        {/* Glow orbs */}
         <div style={{ position: "absolute", width: "700px", height: "700px", borderRadius: "50%", background: `radial-gradient(circle, rgba(201,132,138,0.18) 0%, rgba(201,132,138,0.06) 40%, transparent 70%)`, top: "40%", left: "30%", transform: "translate(-50%,-50%)", zIndex: 0, animation: "pulseOrb 4s ease-in-out infinite" }} />
         <div style={{ position: "absolute", width: "500px", height: "500px", borderRadius: "50%", background: `radial-gradient(circle, rgba(196,163,90,0.14) 0%, rgba(196,163,90,0.05) 50%, transparent 70%)`, top: "60%", left: "70%", transform: "translate(-50%,-50%)", zIndex: 0, animation: "pulseOrb 6s ease-in-out infinite reverse" }} />
         <div style={{ position: "absolute", width: "400px", height: "400px", borderRadius: "50%", background: `radial-gradient(circle, rgba(138,158,122,0.1) 0%, transparent 70%)`, top: "20%", left: "10%", zIndex: 0 }} />
-
-        {/* Ghost text */}
         <div style={{
-          position: "absolute", fontSize: "18vw",
-          fontFamily: font.cursive, fontWeight: 600,
+          position: "absolute", fontSize: "18vw", fontFamily: font.cursive, fontWeight: 600,
           color: "transparent", WebkitTextStroke: `1px rgba(201,132,138,0.08)`,
           userSelect: "none", top: "50%", left: "50%",
           transform: "translate(-50%,-50%)", whiteSpace: "nowrap", zIndex: 0,
@@ -148,15 +152,10 @@ export default function HomePageLight({ toggleTheme }) {
 
         {/* LEFT */}
         <div style={{ position: "relative", zIndex: 2, opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(30px)", transition: "opacity 0.9s ease, transform 0.9s ease" }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: "0.8rem", marginBottom: "2rem",
-            padding: "0.4rem 1.2rem", border: `1px solid ${C.borderRose}`,
-            borderRadius: "999px", background: C.roseLight
-          }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.8rem", marginBottom: "2rem", padding: "0.4rem 1.2rem", border: `1px solid ${C.borderRose}`, borderRadius: "999px", background: C.roseLight }}>
             <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: C.rose, display: "inline-block", animation: "pulseR 2s infinite" }} />
             <span style={{ fontSize: "0.7rem", letterSpacing: "3px", textTransform: "uppercase", color: C.rose, fontFamily: font.body, fontWeight: 500 }}>AI-Powered Supply Chain</span>
           </div>
-
           <h1 style={{ fontFamily: font.heading, fontSize: "clamp(3rem, 7vw, 6.5rem)", lineHeight: 0.92, marginBottom: "1.8rem", letterSpacing: "1px", fontWeight: 600 }}>
             <span style={{ display: "block", color: C.ink }}>Deliver</span>
             <span style={{ display: "block", color: C.ink }}>Certainty.</span>
@@ -164,47 +163,25 @@ export default function HomePageLight({ toggleTheme }) {
               {displayed}<span style={{ animation: "blink 0.8s infinite", color: C.gold }}>|</span>
             </span>
           </h1>
-
           <p style={{ fontSize: "0.95rem", color: C.inkMid, lineHeight: 1.9, maxWidth: "440px", marginBottom: "2.5rem", fontWeight: 300 }}>
             Intelligent ETA prediction and delay analysis for supply chains that demand precision. When a shipment moves, you know. When it doesn't, you know why.
           </p>
-
           <div style={{ display: "flex", gap: "1rem" }}>
-            <button style={{
-              background: `linear-gradient(135deg, ${C.rose}, ${C.gold})`,
-              color: "#fff", border: "none", padding: "1rem 2.5rem",
-              fontSize: "0.82rem", fontWeight: 600, letterSpacing: "2px",
-              textTransform: "uppercase", cursor: "pointer", borderRadius: "2px",
-              fontFamily: font.body, ...hover
-            }}
+            <button style={{ background: `linear-gradient(135deg, ${C.rose}, ${C.gold})`, color: "#fff", border: "none", padding: "1rem 2.5rem", fontSize: "0.82rem", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", cursor: "pointer", borderRadius: "2px", fontFamily: font.body, ...hover }}
               onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05) translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 30px rgba(201,132,138,0.35)`; }}
               onMouseLeave={e => { e.currentTarget.style.transform = "scale(1) translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
             >Get Started</button>
-            <button style={{
-              background: "transparent", color: C.inkLight,
-              border: `1px solid ${C.border}`, padding: "1rem 2rem",
-              fontSize: "0.82rem", letterSpacing: "2px", textTransform: "uppercase",
-              cursor: "pointer", borderRadius: "2px", fontFamily: font.body, ...hover
-            }}
+            <button style={{ background: "transparent", color: C.inkLight, border: `1px solid ${C.border}`, padding: "1rem 2rem", fontSize: "0.82rem", letterSpacing: "2px", textTransform: "uppercase", cursor: "pointer", borderRadius: "2px", fontFamily: font.body, ...hover }}
               onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.borderColor = C.rose; e.currentTarget.style.color = C.rose; }}
               onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.inkLight; }}
             >Learn More</button>
           </div>
         </div>
 
-        {/* RIGHT — Tracker card */}
-        <div style={{
-          position: "relative", zIndex: 2,
-          opacity: visible ? 1 : 0, transform: visible ? "translateX(0)" : "translateX(30px)",
-          transition: "opacity 1s ease 0.3s, transform 1s ease 0.3s"
-        }}>
-          <div style={{
-            background: C.bgCard, border: `1px solid ${C.borderRose}`,
-            borderRadius: "12px", padding: "1.8rem", position: "relative",
-            backdropFilter: "blur(10px)", boxShadow: "0 8px 40px rgba(201,132,138,0.1)"
-          }}>
+        {/* RIGHT */}
+        <div style={{ position: "relative", zIndex: 2, opacity: visible ? 1 : 0, transform: visible ? "translateX(0)" : "translateX(30px)", transition: "opacity 1s ease 0.3s, transform 1s ease 0.3s" }}>
+          <div style={{ background: C.bgCard, border: `1px solid ${C.borderRose}`, borderRadius: "12px", padding: "1.8rem", position: "relative", backdropFilter: "blur(10px)", boxShadow: "0 8px 40px rgba(201,132,138,0.1)" }}>
             <div style={{ position: "absolute", top: "-8px", right: "-8px", width: "16px", height: "16px", borderRadius: "50%", background: C.rose, animation: "pulseR 2s infinite", boxShadow: `0 0 10px rgba(201,132,138,0.5)` }} />
-
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem", paddingBottom: "1rem", borderBottom: `1px solid ${C.border}` }}>
               <span style={{ fontSize: "0.65rem", letterSpacing: "3px", textTransform: "uppercase", background: `linear-gradient(90deg,${C.rose},${C.gold})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontFamily: font.body, fontWeight: 600 }}>Live Operations</span>
               <span style={{ fontSize: "0.6rem", color: C.inkFaint, letterSpacing: "1px", display: "flex", alignItems: "center", gap: "5px", fontFamily: font.body }}>
@@ -212,7 +189,6 @@ export default function HomePageLight({ toggleTheme }) {
                 4 Active
               </span>
             </div>
-
             {[
               { icon: "🚢", id: "SHP-4821", route: "Mumbai → Dubai", eta: "On Schedule", ok: true },
               { icon: "✈️", id: "SHP-3309", route: "Delhi → New York", eta: "+2h · Weather", ok: false },
@@ -228,18 +204,11 @@ export default function HomePageLight({ toggleTheme }) {
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <span style={{
-                    fontSize: "0.62rem", padding: "0.2rem 0.7rem", borderRadius: "2px",
-                    fontWeight: 500, letterSpacing: "0.5px", fontFamily: font.body,
-                    background: s.ok ? C.goldLight : C.roseLight,
-                    color: s.ok ? C.gold : C.rose,
-                    border: `1px solid ${s.ok ? "rgba(196,163,90,0.3)" : "rgba(201,132,138,0.3)"}`
-                  }}>{s.ok ? "Nominal" : "Delayed"}</span>
+                  <span style={{ fontSize: "0.62rem", padding: "0.2rem 0.7rem", borderRadius: "2px", fontWeight: 500, letterSpacing: "0.5px", fontFamily: font.body, background: s.ok ? C.goldLight : C.roseLight, color: s.ok ? C.gold : C.rose, border: `1px solid ${s.ok ? "rgba(196,163,90,0.3)" : "rgba(201,132,138,0.3)"}` }}>{s.ok ? "Nominal" : "Delayed"}</span>
                   <div style={{ fontSize: "0.65rem", color: C.inkFaint, marginTop: "2px", fontFamily: font.body }}>{s.eta}</div>
                 </div>
               </div>
             ))}
-
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "0.8rem", marginTop: "1.2rem", paddingTop: "1.2rem", borderTop: `1px solid ${C.border}` }}>
               {[{ val: "94%", label: "Accuracy" }, { val: "2/4", label: "On Time" }, { val: "LOW", label: "Risk" }].map((m, i) => (
                 <div key={i} style={{ textAlign: "center", padding: "0.6rem", background: C.bgDeep, borderRadius: "4px", border: `1px solid ${C.border}` }}>
@@ -253,11 +222,7 @@ export default function HomePageLight({ toggleTheme }) {
       </section>
 
       {/* LIVE FEED STRIP */}
-      <div style={{
-        background: C.bgDeep, borderTop: `1px solid ${C.border}`,
-        borderBottom: `1px solid ${C.border}`,
-        padding: "0.8rem 4rem", display: "flex", alignItems: "center", gap: "2rem"
-      }}>
+      <div style={{ background: C.bgDeep, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, padding: "0.8rem 4rem", display: "flex", alignItems: "center", gap: "2rem" }}>
         <div style={{ fontSize: "0.58rem", letterSpacing: "3px", textTransform: "uppercase", background: `linear-gradient(90deg,${C.rose},${C.gold})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", whiteSpace: "nowrap", paddingRight: "2rem", borderRight: `1px solid ${C.border}`, fontFamily: font.body, fontWeight: 600 }}>Live Intel</div>
         <div style={{ overflow: "hidden", flex: 1 }}>
           <div style={{ display: "inline-flex", gap: "3rem", animation: "scrollX 25s linear infinite", whiteSpace: "nowrap" }}>
@@ -277,7 +242,6 @@ export default function HomePageLight({ toggleTheme }) {
           <h2 style={{ fontFamily: font.heading, fontSize: "3.5rem", fontWeight: 600, color: C.ink, letterSpacing: "1px" }}>What We Do</h2>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gridTemplateRows: "auto auto", gap: "1rem", maxWidth: "1100px", margin: "0 auto" }}>
-
           <div style={{ gridColumn: "1/3", background: `linear-gradient(135deg, rgba(201,132,138,0.1), rgba(196,163,90,0.06))`, border: `1px solid ${C.borderRose}`, borderRadius: "8px", padding: "2.5rem", cursor: "pointer", ...hover, position: "relative", overflow: "hidden", boxShadow: "0 2px 20px rgba(201,132,138,0.07)" }}
             onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = `0 0 40px rgba(201,132,138,0.15)`; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 20px rgba(201,132,138,0.07)"; }}

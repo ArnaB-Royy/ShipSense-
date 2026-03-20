@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import "../App.css";
+import { useNavigate } from "react-router-dom";
 
 const WORDS = ["ON TIME.", "EVERY DELAY.", "EVERY ROUTE.", "THE FUTURE."];
 
@@ -8,6 +8,7 @@ export default function HomePage({ toggleTheme }) {
   const [displayed, setDisplayed] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [visible, setVisible] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 100);
@@ -31,8 +32,24 @@ export default function HomePage({ toggleTheme }) {
 
   const hover = { transition: "transform 0.2s, box-shadow 0.2s" };
 
+  const navLinks = [
+    { label: "About", path: "/about" },
+    { label: "Partners", path: "#" },
+    { label: "Features", path: "/features" },
+    { label: "Team", path: "#" },
+    { label: "Contact", path: "#" },
+  ];
+
   return (
     <div style={{ background: "#07060a", color: "#e0d8d0", fontFamily: "'Inter', sans-serif", overflowX: "hidden" }}>
+
+      <style>{`
+        @keyframes pulseR { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+        @keyframes pulseOrb { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.15); } }
+        @keyframes floatBg { 0%, 100% { transform: translate(-50%, -50%) translateY(0px); } 50% { transform: translate(-50%, -50%) translateY(-20px); } }
+        @keyframes scrollX { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+      `}</style>
 
       {/* NAVBAR */}
       <nav style={{
@@ -41,38 +58,35 @@ export default function HomePage({ toggleTheme }) {
         zIndex: 100, background: "rgba(7,6,10,0.85)", backdropFilter: "blur(20px)",
         borderBottom: "1px solid rgba(255,255,255,0.05)"
       }}>
-        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.6rem", letterSpacing: "4px", background: "linear-gradient(90deg, #e63232, #f0a030)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+        <div
+          onClick={(e) => { e.stopPropagation(); navigate("/"); }}
+          style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.6rem", letterSpacing: "4px", background: "linear-gradient(90deg, #e63232, #f0a030)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", cursor: "pointer" }}
+        >
           SHIPSENSE
         </div>
         <ul style={{ display: "flex", gap: "2.5rem", listStyle: "none", margin: 0, padding: 0 }}>
-          {["About", "Platform", "Features", "Contact"].map(l => (
-            <li key={l}>
-              <a href="#" style={{ color: "#666", textDecoration: "none", fontSize: "0.8rem", letterSpacing: "1.5px", textTransform: "uppercase", transition: "color 0.2s" }}
+          {navLinks.map(l => (
+            <li key={l.label}>
+              <a
+                href="#"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (l.path !== "#") navigate(l.path); }}
+                style={{ color: "#666", textDecoration: "none", fontSize: "0.8rem", letterSpacing: "1.5px", textTransform: "uppercase", transition: "color 0.2s" }}
                 onMouseEnter={e => e.target.style.color = "#f0a030"}
                 onMouseLeave={e => e.target.style.color = "#666"}
-              >{l}</a>
+              >
+                {l.label}
+              </a>
             </li>
           ))}
         </ul>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          {/* THEME TOGGLE */}
           <div onClick={toggleTheme} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
             <span style={{ fontSize: "0.7rem", letterSpacing: "1px", color: "#666", textTransform: "uppercase" }}>🌙</span>
-            <div style={{
-              width: "44px", height: "24px", borderRadius: "999px",
-              background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
-              position: "relative", transition: "background 0.3s"
-            }}>
-              <div style={{
-                position: "absolute", top: "3px", left: "3px",
-                width: "18px", height: "18px", borderRadius: "50%",
-                background: "linear-gradient(135deg, #e63232, #f0a030)",
-                transition: "transform 0.3s"
-              }} />
+            <div style={{ width: "44px", height: "24px", borderRadius: "999px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", position: "relative" }}>
+              <div style={{ position: "absolute", top: "3px", left: "3px", width: "18px", height: "18px", borderRadius: "50%", background: "linear-gradient(135deg, #e63232, #f0a030)" }} />
             </div>
             <span style={{ fontSize: "0.7rem", letterSpacing: "1px", color: "#444", textTransform: "uppercase" }}>☀️</span>
           </div>
-
           <button style={{ background: "linear-gradient(135deg, #e63232, #f0a030)", color: "#fff", border: "none", padding: "0.6rem 1.6rem", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", cursor: "pointer", borderRadius: "2px", ...hover }}
             onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = "0 0 20px rgba(230,50,50,0.4)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "none"; }}
@@ -80,24 +94,19 @@ export default function HomePage({ toggleTheme }) {
         </div>
       </nav>
 
-      {/* HERO — Split layout with tracker card */}
+      {/* HERO */}
       <section style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr", alignItems: "center", padding: "8rem 4rem 4rem", position: "relative", overflow: "hidden", gap: "4rem" }}>
-
-        {/* Glow orbs */}
         <div style={{ position: "absolute", width: "700px", height: "700px", borderRadius: "50%", background: "radial-gradient(circle, rgba(196,30,30,0.22) 0%, rgba(196,30,30,0.08) 40%, transparent 70%)", top: "40%", left: "30%", transform: "translate(-50%,-50%)", zIndex: 0, animation: "pulseOrb 4s ease-in-out infinite" }} />
         <div style={{ position: "absolute", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(240,160,48,0.15) 0%, rgba(240,100,30,0.06) 50%, transparent 70%)", top: "60%", left: "70%", transform: "translate(-50%,-50%)", zIndex: 0, animation: "pulseOrb 6s ease-in-out infinite reverse" }} />
         <div style={{ position: "absolute", width: "400px", height: "400px", borderRadius: "50%", background: "radial-gradient(circle, rgba(196,30,30,0.1) 0%, transparent 70%)", top: "20%", left: "10%", zIndex: 0 }} />
-
-        {/* Ghost text */}
         <div style={{ position: "absolute", fontSize: "18vw", fontFamily: "'Bebas Neue', sans-serif", color: "transparent", WebkitTextStroke: "1px rgba(196,30,30,0.06)", userSelect: "none", top: "50%", left: "50%", transform: "translate(-50%,-50%)", whiteSpace: "nowrap", zIndex: 0, animation: "floatBg 8s ease-in-out infinite" }}>SHIPSENSE</div>
 
-        {/* LEFT — Text */}
+        {/* LEFT */}
         <div style={{ position: "relative", zIndex: 2, opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(30px)", transition: "opacity 0.9s ease, transform 0.9s ease" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: "0.8rem", marginBottom: "2rem", padding: "0.4rem 1.2rem", border: "1px solid rgba(196,30,30,0.3)", borderRadius: "999px", background: "rgba(196,30,30,0.05)" }}>
             <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#e63232", display: "inline-block", animation: "pulseR 2s infinite" }} />
             <span style={{ fontSize: "0.7rem", letterSpacing: "3px", textTransform: "uppercase", color: "#e08080" }}>AI-Powered Supply Chain</span>
           </div>
-
           <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(3rem, 7vw, 6.5rem)", lineHeight: 0.92, marginBottom: "1.8rem", letterSpacing: "1px" }}>
             <span style={{ display: "block", background: "linear-gradient(135deg, #ffffff 0%, #c8b8b0 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>DELIVER</span>
             <span style={{ display: "block", background: "linear-gradient(135deg, #ffffff 0%, #c8b8b0 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>CERTAINTY.</span>
@@ -105,11 +114,9 @@ export default function HomePage({ toggleTheme }) {
               {displayed}<span style={{ animation: "blink 0.8s infinite", color: "#f0a030" }}>|</span>
             </span>
           </h1>
-
           <p style={{ fontSize: "0.92rem", color: "#6a5e5e", lineHeight: 1.9, maxWidth: "440px", marginBottom: "2.5rem", fontWeight: 300 }}>
             Intelligent ETA prediction and delay analysis for supply chains that demand precision. When a shipment moves, you know. When it doesn't, you know why.
           </p>
-
           <div style={{ display: "flex", gap: "1rem" }}>
             <button style={{ background: "linear-gradient(135deg, #e63232, #f0a030)", color: "#fff", border: "none", padding: "1rem 2.5rem", fontSize: "0.82rem", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", cursor: "pointer", borderRadius: "2px", ...hover }}
               onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05) translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(230,50,50,0.4)"; }}
@@ -122,16 +129,10 @@ export default function HomePage({ toggleTheme }) {
           </div>
         </div>
 
-        {/* RIGHT — Tracker card from V1 style */}
-        <div style={{
-          position: "relative", zIndex: 2,
-          opacity: visible ? 1 : 0, transform: visible ? "translateX(0)" : "translateX(30px)",
-          transition: "opacity 1s ease 0.3s, transform 1s ease 0.3s"
-        }}>
+        {/* RIGHT */}
+        <div style={{ position: "relative", zIndex: 2, opacity: visible ? 1 : 0, transform: visible ? "translateX(0)" : "translateX(30px)", transition: "opacity 1s ease 0.3s, transform 1s ease 0.3s" }}>
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(196,30,30,0.2)", borderRadius: "12px", padding: "1.8rem", position: "relative", backdropFilter: "blur(10px)" }}>
-            {/* Pulse dot */}
             <div style={{ position: "absolute", top: "-8px", right: "-8px", width: "16px", height: "16px", borderRadius: "50%", background: "#e63232", animation: "pulseR 2s infinite", boxShadow: "0 0 10px rgba(230,50,50,0.5)" }} />
-
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem", paddingBottom: "1rem", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               <span style={{ fontSize: "0.65rem", letterSpacing: "3px", textTransform: "uppercase", background: "linear-gradient(90deg,#e63232,#f0a030)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>LIVE OPERATIONS</span>
               <span style={{ fontSize: "0.6rem", color: "#444", letterSpacing: "1px", display: "flex", alignItems: "center", gap: "5px" }}>
@@ -139,7 +140,6 @@ export default function HomePage({ toggleTheme }) {
                 4 ACTIVE
               </span>
             </div>
-
             {[
               { icon: "🚢", id: "SHP-4821", route: "Mumbai → Dubai", eta: "On Schedule", ok: true },
               { icon: "✈️", id: "SHP-3309", route: "Delhi → New York", eta: "+2h · Weather", ok: false },
@@ -160,7 +160,6 @@ export default function HomePage({ toggleTheme }) {
                 </div>
               </div>
             ))}
-
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "0.8rem", marginTop: "1.2rem", paddingTop: "1.2rem", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
               {[{ val: "94%", label: "Accuracy" }, { val: "2/4", label: "On Time" }, { val: "LOW", label: "Risk" }].map((m, i) => (
                 <div key={i} style={{ textAlign: "center", padding: "0.6rem", background: "rgba(255,255,255,0.02)", borderRadius: "4px", border: "1px solid rgba(255,255,255,0.04)" }}>
@@ -194,8 +193,6 @@ export default function HomePage({ toggleTheme }) {
           <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "3.5rem", background: "linear-gradient(135deg, #ffffff, #c8b0a8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "2px" }}>WHAT WE DO</h2>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gridTemplateRows: "auto auto", gap: "1rem", maxWidth: "1100px", margin: "0 auto" }}>
-
-          {/* Big card */}
           <div style={{ gridColumn: "1/3", background: "linear-gradient(135deg, rgba(196,30,30,0.12), rgba(240,160,48,0.06))", border: "1px solid rgba(196,30,30,0.2)", borderRadius: "8px", padding: "2.5rem", cursor: "pointer", ...hover, position: "relative", overflow: "hidden" }}
             onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = "0 0 40px rgba(196,30,30,0.15)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "none"; }}
@@ -206,7 +203,6 @@ export default function HomePage({ toggleTheme }) {
             <p style={{ fontSize: "0.88rem", color: "#6a5e5e", lineHeight: 1.8, maxWidth: "500px" }}>Machine learning models trained on historical route data, carrier performance, and real-time conditions. Estimates that get smarter with every delivery.</p>
           </div>
 
-          {/* Tall card */}
           <div style={{ gridColumn: "3/4", gridRow: "1/3", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "2rem", cursor: "pointer", ...hover, display: "flex", flexDirection: "column", justifyContent: "space-between" }}
             onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.borderColor = "rgba(240,160,48,0.3)"; e.currentTarget.style.boxShadow = "0 0 30px rgba(240,160,48,0.08)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.boxShadow = "none"; }}
@@ -214,12 +210,7 @@ export default function HomePage({ toggleTheme }) {
             <div>
               <div style={{ fontSize: "0.65rem", letterSpacing: "3px", textTransform: "uppercase", color: "#555", marginBottom: "1rem" }}>Live Now</div>
               <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.5rem", color: "#e0d8d0", letterSpacing: "2px", marginBottom: "1.2rem" }}>OPERATIONS FEED</h3>
-              {[
-                { id: "SHP-4821", ok: true },
-                { id: "SHP-3309", ok: false },
-                { id: "SHP-5102", ok: true },
-                { id: "SHP-6074", ok: false },
-              ].map((s, i) => (
+              {[{ id: "SHP-4821", ok: true }, { id: "SHP-3309", ok: false }, { id: "SHP-5102", ok: true }, { id: "SHP-6074", ok: false }].map((s, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
                   <span style={{ fontSize: "0.72rem", color: "#555" }}>{s.id}</span>
                   <span style={{ fontSize: "0.58rem", padding: "0.2rem 0.5rem", background: s.ok ? "rgba(240,160,48,0.1)" : "rgba(196,30,30,0.1)", color: s.ok ? "#f0a030" : "#e63232", border: `1px solid ${s.ok ? "rgba(240,160,48,0.2)" : "rgba(196,30,30,0.2)"}` }}>{s.ok ? "NOMINAL" : "DELAYED"}</span>
@@ -236,7 +227,6 @@ export default function HomePage({ toggleTheme }) {
             </div>
           </div>
 
-          {/* Bottom left */}
           <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "2rem", cursor: "pointer", ...hover }}
             onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.borderColor = "rgba(196,30,30,0.3)"; e.currentTarget.style.boxShadow = "0 0 30px rgba(196,30,30,0.08)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.boxShadow = "none"; }}
@@ -250,7 +240,6 @@ export default function HomePage({ toggleTheme }) {
             </div>
           </div>
 
-          {/* Bottom middle */}
           <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "2rem", cursor: "pointer", ...hover }}
             onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.borderColor = "rgba(240,160,48,0.3)"; e.currentTarget.style.boxShadow = "0 0 30px rgba(240,160,48,0.08)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.boxShadow = "none"; }}
@@ -309,10 +298,13 @@ export default function HomePage({ toggleTheme }) {
         <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.4rem", letterSpacing: "4px", background: "linear-gradient(90deg,#e63232,#f0a030)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>SHIPSENSE</div>
         <div style={{ display: "flex", gap: "2.5rem" }}>
           {["Privacy", "Terms", "Help"].map(l => (
-            <a key={l} href="#" style={{ fontSize: "0.7rem", letterSpacing: "2px", textTransform: "uppercase", color: "#333", textDecoration: "none", transition: "color 0.2s" }}
+            <a key={l} href="#"
+              style={{ fontSize: "0.7rem", letterSpacing: "2px", textTransform: "uppercase", color: "#333", textDecoration: "none", transition: "color 0.2s" }}
               onMouseEnter={e => e.target.style.color = "#f0a030"}
               onMouseLeave={e => e.target.style.color = "#333"}
-            >{l}</a>
+            >
+              {l}
+            </a>
           ))}
         </div>
         <div style={{ fontSize: "0.65rem", color: "#222", letterSpacing: "1px" }}>© 2026 SHIPSENSE. ALL RIGHTS RESERVED.</div>
