@@ -35,12 +35,32 @@ import AddUserLight from './Admin/Users/AddUserLight';
 import ReportsPageDark from './Admin/Reports/ReportsPageDark';
 import ReportsPageLight from './Admin/Reports/ReportsPageLight';
 
+// Customer — Components (navbar/sidebar not used as standalone routes)
+import CustomerSidebarDark from "./Customer/Components/CustomerSidebarDark"; 
+import CustomerNavbarDark from "./Customer/Components/CustomerNavbarDark"; 
+import CustomerSidebarLight from "./Customer/Components/CustomerSidebarLight"; 
+import CustomerNavbarLight from "./Customer/Components/CustomerNavbarLight";
+
+
+// Customer — Pages
+import CustomerDashboardDark from './Customer/CustomerDashboardDark';
+import CustomerDashboardLight from './Customer/CustomerDashboardLight';
+import CustomerNotificationsDark from './Customer/Notifications/CustomerNotificationsDark';
+import CustomerNotificationsLight from './Customer/Notifications/CustomerNotificationsLight';
+import CustomerProfileDark from './Customer/Profile/CustomerProfileDark';
+import CustomerProfileLight from './Customer/Profile/CustomerProfileLight';
+import CustomerShipmentsDark from './Customer/Shipments/CustomerShipmentsDark';
+import CustomerShipmentsLight from './Customer/Shipments/CustomerShipmentsLight';
+import CustomerTrackingDark from './Customer/Tracking/CustomerTrackingDark';
+import CustomerTrackingLight from './Customer/Tracking/CustomerTrackingLight';
 
 // Global
 import GlobalStyles from './GlobalStyles';
 
 function App() {
   const [isLight, setIsLight] = useState(false);
+
+  const toggleTheme = () => setIsLight(prev => !prev);
 
   return (
     <Router>
@@ -50,87 +70,120 @@ function App() {
         {/* ─── HOME ─── */}
         <Route path="/" element={
           isLight
-            ? <HomePageLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <HomePageDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <HomePageLight toggleTheme={toggleTheme} />
+            : <HomePageDark toggleTheme={toggleTheme} />
         } />
 
         {/* ─── HOME PAGES ─── */}
         <Route path="/about" element={
           isLight
-            ? <AboutPageLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <AboutPageDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <AboutPageLight toggleTheme={toggleTheme} />
+            : <AboutPageDark toggleTheme={toggleTheme} />
         } />
+
         <Route path="/features" element={
           isLight
-            ? <FeaturePageLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <FeaturePageDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <FeaturePageLight toggleTheme={toggleTheme} />
+            : <FeaturePageDark toggleTheme={toggleTheme} />
         } />
+
         <Route path="/partners" element={
           isLight
-            ? <PartnersPageLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <PartnersPageDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <PartnersPageLight toggleTheme={toggleTheme} />
+            : <PartnersPageLight toggleTheme={toggleTheme} />
         } />
+
         <Route path="/team" element={
           isLight
-            ? <TeamPageLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <TeamPageDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <TeamPageLight toggleTheme={toggleTheme} />
+            : <TeamPageDark toggleTheme={toggleTheme} />
         } />
+
         <Route path="/contact" element={
           isLight
-            ? <ContactPageLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <ContactPageDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <ContactPageLight toggleTheme={toggleTheme} />
+            : <ContactPageDark toggleTheme={toggleTheme} />
         } />
 
         {/* ─── ADMIN ─── */}
         <Route path="/admin" element={
           isLight
-            ? <AdminDashboardLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <AdminDashboardDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <AdminDashboardLight toggleTheme={toggleTheme} />
+            : <AdminDashboardDark toggleTheme={toggleTheme} />
         } />
 
         {/* ─── ADMIN PAGES ─── */}
         <Route path="/admin/shipments" element={
           isLight
-            ? <ShipmentsPageLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <ShipmentsPageDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <ShipmentsPageLight toggleTheme={toggleTheme} />
+            : <ShipmentsPageDark toggleTheme={toggleTheme} />
         } />
+
         <Route path="/admin/add-shipment" element={
           isLight
-            ? <AddShipmentLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <AddShipmentDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <AddShipmentLight toggleTheme={toggleTheme} />
+            : <AddShipmentDark toggleTheme={toggleTheme} />
         } />
+
         <Route path="/admin/delay-codes" element={
           isLight
-            ? <DelayCodesPageLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <DelayCodesPageDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <DelayCodesPageLight toggleTheme={toggleTheme} />
+            : <DelayCodesPageDark toggleTheme={toggleTheme} />
         } />
+
         <Route path="/admin/add-delay-code" element={
           isLight
-            ? <AddDelayCodeLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <AddDelayCodeDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <AddDelayCodeLight toggleTheme={toggleTheme} />
+            : <AddDelayCodeDark toggleTheme={toggleTheme} />
         } />
+
         <Route path="/admin/user-management" element={
           isLight
-            ? <UserManagementPageLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <UserManagementPageDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <UserManagementPageLight toggleTheme={toggleTheme} />
+            : <UserManagementPageDark toggleTheme={toggleTheme} />
         } />
+
         <Route path="/admin/add-user" element={
           isLight
-            ? <AddUserLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <AddUserDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <AddUserLight toggleTheme={toggleTheme} />
+            : <AddUserDark toggleTheme={toggleTheme} />
         } />
-        <Route path="/admin/reports" element={
+
+
+        {/* ─── CUSTOMER PAGES ─── */}
+        {/* Each customer page is self-contained with its own navbar (no shared layout wrapper) */}
+
+        <Route path="/customer" element={
           isLight
-            ? <ReportsPageLight key="light" toggleTheme={() => setIsLight(false)} />
-            : <ReportsPageDark key="dark" toggleTheme={() => setIsLight(true)} />
+            ? <CustomerDashboardLight toggleTheme={toggleTheme} />
+            : <CustomerDashboardDark toggleTheme={toggleTheme} />
         } />
 
-        {/* ─── SUPPLIER ─── */}
-        {/* coming soon */}
+        <Route path="/customer/notifications" element={
+          isLight
+            ? <CustomerNotificationsLight toggleTheme={toggleTheme} />
+            : <CustomerNotificationsDark toggleTheme={toggleTheme} />
+        } />
 
-        {/* ─── CUSTOMER ─── */}
-        {/* coming soon */}
+        <Route path="/customer/profile" element={
+          isLight
+            ? <CustomerProfileLight toggleTheme={toggleTheme} />
+            : <CustomerProfileDark toggleTheme={toggleTheme} />
+        } />
 
+        <Route path="/customer/shipments" element={
+          isLight
+            ? <CustomerShipmentsLight toggleTheme={toggleTheme} />
+            : <CustomerShipmentsDark toggleTheme={toggleTheme} />
+        } />
+
+        <Route path="/customer/tracking" element={
+          isLight
+            ? <CustomerTrackingLight toggleTheme={toggleTheme} />
+            : <CustomerTrackingDark toggleTheme={toggleTheme} />
+        } />
+        
+        
       </Routes>
     </Router>
   );

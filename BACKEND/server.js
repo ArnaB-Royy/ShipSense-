@@ -22,6 +22,8 @@ app.use("/api/users",      UserRoutes);
 app.use("/api/delaycodes", DelayCodeRoutes);
 app.use("/api/reports",    ReportRoutes);
 
+app.use('/api/customers', require('./Routes/Customer'));
+
 app.get("/", (req, res) => {
   res.send("ShipSense backend running");
 });
