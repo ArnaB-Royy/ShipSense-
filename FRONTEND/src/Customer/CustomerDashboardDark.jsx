@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import CustomerSidebarDark from "./Components/CustomerSidebarDark";
 import CustomerNavbarDark from "./Components/CustomerNavbarDark";
 
-const CUSTOMER_API  = "http://localhost:5000/api/customer/profile";
-const SHIPMENTS_API = "http://localhost:5000/api/customer/shipments";
+const ME_API        = "http://localhost:5000/api/auth/me";
+const SHIPMENTS_API = "http://localhost:5000/api/shipments/my";
 
 export default function CustomerDashboardDark({ toggleTheme, customerId }) {
   const navigate = useNavigate();
@@ -13,36 +13,26 @@ export default function CustomerDashboardDark({ toggleTheme, customerId }) {
   const [shipments, setShipments]       = useState([]);
   const [loading, setLoading]           = useState(true);
   const [animated, setAnimated]         = useState(false);
-  const [trackInput, setTrackInput]     = useState("");
-  const [trackFocus, setTrackFocus]     = useState(false);
-  const trackRef = useRef(null);
+
 
   useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
-    try {
-      setLoading(true);
-      const [pRes, sRes] = await Promise.all([
-        fetch(CUSTOMER_API),
-        fetch(SHIPMENTS_API),
-      ]);
-      const pJson = await pRes.json();
-      const sJson = await sRes.json();
-      if (pJson.success) setProfile(pJson.data);
-      if (sJson.success) setShipments(sJson.data);
-      setTimeout(() => setAnimated(true), 150);
-    } catch (err) {
-      console.error("Customer dashboard fetch error:", err);
-      setProfile({ name: "Alex Morgan", email: "alex@example.com", memberSince: "2023" });
-      setShipments([
-        { ShipmentId: "SHP-1042", Supplier: "AcmeCorp",    Origin: "Mumbai",    Destination: "Delhi",     ETA: new Date(Date.now() + 86400000*2), Status: "In Transit", DelayReason: null },
-        { ShipmentId: "SHP-1039", Supplier: "GlobalTrade", Origin: "Chennai",   Destination: "Kolkata",   ETA: new Date(Date.now() - 86400000*1), Status: "Delivered",  DelayReason: null },
-        { ShipmentId: "SHP-1035", Supplier: "SwiftCargo",  Origin: "Pune",      Destination: "Hyderabad", ETA: new Date(Date.now() + 86400000*5), Status: "Pending",    DelayReason: null },
-        { ShipmentId: "SHP-1031", Supplier: "AcmeCorp",    Origin: "Bengaluru", Destination: "Mumbai",    ETA: new Date(Date.now() - 86400000*3), Status: "Delayed",    DelayReason: "Port Congestion" },
-        { ShipmentId: "SHP-1028", Supplier: "GlobalTrade", Origin: "Delhi",     Destination: "Chennai",   ETA: new Date(Date.now() + 86400000*1), Status: "In Transit", DelayReason: null },
-      ]);
-      setTimeout(() => setAnimated(true), 150);
-    } finally {
+      try {
+        setLoading(true);
+        const [pRes, sRes] = await Promise.all([
+          fetch(ME_API,        { credentials: "include" }),
+          fetch(SHIPMENTS_API, { credentials: "include" }),
+        ]);
+        const pJson = await pRes.json();
+        const sJson = await sRes.json();
+        if (pJson.success) setProfile(pJson.user);
+        if (sJson.success) setShipments(sJson.data);
+        setTimeout(() => setAnimated(true), 150);
+      } catch (err) {
+        console.error("Customer dashboard fetch error:", err);
+        setTimeout(() => setAnimated(true), 150);
+      } finally {
       setLoading(false);
     }
   };
@@ -70,10 +60,6 @@ export default function CustomerDashboardDark({ toggleTheme, customerId }) {
     { label: "Pending",         value: pending,        icon: "⏳", color: "#c8803a", sub: "awaiting action", pct: totalShipments ? (pending / totalShipments) * 100 : 0 },
   ];
 
-  const handleTrack = (e) => {
-    e.preventDefault();
-    if (trackInput.trim()) navigate(`/customer/track/${trackInput.trim()}`);
-  };
 
   return (
     <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"#07060a", color:"#e0d8d0", fontFamily:"'Inter',sans-serif", overflow:"visible" }}>
@@ -199,7 +185,7 @@ export default function CustomerDashboardDark({ toggleTheme, customerId }) {
             <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"6px" }}>
               <div style={{ width:"24px", height:"2px", background:"linear-gradient(90deg,#e63232,#f0a030)", borderRadius:"2px" }} />
               <span style={{ fontSize:"0.6rem", letterSpacing:"4px", textTransform:"uppercase", background:"linear-gradient(90deg,#e63232,#f0a030)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", fontWeight:700 }}>
-                Welcome back{profile?.name ? `, ${profile.name.split(" ")[0]}` : ""}
+                Welcome back{profile?.Name ? `, ${profile.Name.split(" ")[0]}` : localStorage.getItem("userName") ? `, ${localStorage.getItem("userName").split(" ")[0]}` : ""}
               </span>
             </div>
             <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"2.8rem", background:"linear-gradient(135deg,#ffffff 0%,#e0c8c0 50%,#f0a030 100%)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text", letterSpacing:"3px", lineHeight:1, margin:0 }}>MY DASHBOARD</h1>
@@ -239,63 +225,85 @@ export default function CustomerDashboardDark({ toggleTheme, customerId }) {
               </div>
 
               {/* ── BOTTOM GRID: Track Box + Shipments Table ── */}
-              <div className="fade-up-d-2" style={{ display:"grid", gridTemplateColumns:"300px 1fr", gap:"16px", alignItems:"start" }}>
-
-                {/* Track Box */}
+              <div className="fade-up-d-2" style={{ display:"grid", gridTemplateColumns:"300px 1fr", gap:"16px", alignItems:"stretch" }}> 
+              
+                {/* Quick Stats */}
                 <div className="card-d" style={{ position:"sticky", top:"80px" }}>
                   <div className="card-top-d" />
                   <div style={{ padding:"1.4rem 1.5rem" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"6px" }}>
                       <div style={{ width:"3px", height:"14px", background:"linear-gradient(to bottom,#e63232,#f0a030)", borderRadius:"2px" }} />
-                      <div style={{ fontSize:"0.6rem", letterSpacing:"2.5px", textTransform:"uppercase", color:"#6a5a50", fontWeight:700, fontFamily:"'Inter',sans-serif" }}>Quick Track</div>
+                      <div style={{ fontSize:"0.6rem", letterSpacing:"2.5px", textTransform:"uppercase", color:"#6a5a50", fontWeight:700, fontFamily:"'Inter',sans-serif" }}>Analytics</div>
                     </div>
-                    <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"1.4rem", color:"#e0d8d0", letterSpacing:"2px", margin:"0 0 0.6rem" }}>TRACK A SHIPMENT</h3>
-                    <p style={{ fontSize:"0.74rem", color:"#7a6a60", margin:"0 0 1.2rem", lineHeight:1.6, fontFamily:"'Inter',sans-serif" }}>Enter a shipment ID to instantly view real-time tracking details.</p>
+                    <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"1.4rem", color:"#e0d8d0", letterSpacing:"2px", margin:"0 0 1.4rem" }}>QUICK STATS</h3>
 
-                    <form onSubmit={handleTrack} style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-                      <div style={{ position:"relative" }}>
-                        <input
-                          ref={trackRef}
-                          className="track-input-d"
-                          type="text"
-                          value={trackInput}
-                          onChange={e => setTrackInput(e.target.value)}
-                          onFocus={() => setTrackFocus(true)}
-                          onBlur={() => setTrackFocus(false)}
-                          placeholder="e.g. SHP-1042"
-                        />
-                        {trackInput && (
-                          <button type="button"
-                            onClick={() => setTrackInput("")}
-                            style={{ position:"absolute", right:"12px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", color:"#5a4a45", cursor:"pointer", fontSize:"1rem", lineHeight:1 }}>
-                            ×
-                          </button>
-                        )}
-                      </div>
-                      <button type="submit" className="track-btn-d">
-                        🔍 Track Shipment
-                      </button>
-                    </form>
-
-                    <div style={{ marginTop:"1.4rem", paddingTop:"1.2rem", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
-                      <div style={{ fontSize:"0.58rem", letterSpacing:"2px", textTransform:"uppercase", color:"#4a3a35", fontWeight:700, marginBottom:"10px", fontFamily:"'Inter',sans-serif" }}>Recent IDs</div>
-                      {recentShipments.slice(0, 3).map((s, i) => (
-                        <div key={i}
-                          onClick={() => navigate(`/customer/tracking/${s.ShipmentId}`)}
-                          style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 10px", borderRadius:"7px", marginBottom:"6px", background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.04)", cursor:"pointer", transition:"all 0.2s" }}
-                          onMouseEnter={e => { e.currentTarget.style.background="rgba(230,50,50,0.06)"; e.currentTarget.style.borderColor="rgba(230,50,50,0.2)"; }}
-                          onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.02)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.04)"; }}
-                        >
-                          <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"0.85rem", letterSpacing:"1px", background:"linear-gradient(135deg,#f0a030,#e63232)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>{s.ShipmentId}</span>
-                          <span style={{ fontSize:"0.62rem", color:statusConfig(s.Status).color, fontWeight:600, fontFamily:"'Inter',sans-serif" }}>{s.Status}</span>
+                    {/* On-Time Rate */}
+                    {(() => {
+                      const onTimeCount = shipments.filter(s => s.Status === "Delivered" || s.Status === "On Time" || s.Status === "In Transit").filter(s => s.Status !== "Delayed").length;
+                      const onTimePct = totalShipments ? Math.round((onTimeCount / totalShipments) * 100) : 0;
+                      return (
+                        <div style={{ marginBottom:"1.4rem" }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
+                            <span style={{ fontSize:"0.72rem", color:"#7a6a60", fontFamily:"'Inter',sans-serif", fontWeight:500 }}>On-Time Rate</span>
+                            <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"1.6rem", color: onTimePct >= 70 ? "#e8c090" : "#e63232", letterSpacing:"2px" }}>{onTimePct}%</span>
+                          </div>
+                          <div style={{ height:"4px", background:"rgba(255,255,255,0.04)", borderRadius:"999px", overflow:"hidden" }}>
+                            <div className="bar-fill-d" style={{ width: animated ? `${onTimePct}%` : "0%", background:"linear-gradient(90deg,#e63232,#f0a030)" }} />
+                          </div>
                         </div>
-                      ))}
+                      );
+                    })()}
+
+                    {/* Most Used Supplier */}
+                    {(() => {
+                      const supplierMap = {};
+                      shipments.forEach(s => { supplierMap[s.Supplier] = (supplierMap[s.Supplier] || 0) + 1; });
+                      const topSupplier = Object.entries(supplierMap).sort((a,b) => b[1]-a[1])[0];
+                      return (
+                        <div style={{ marginBottom:"1.4rem", padding:"1rem", background:"rgba(255,255,255,0.02)", borderRadius:"10px", border:"1px solid rgba(255,255,255,0.04)" }}>
+                          <div style={{ fontSize:"0.58rem", letterSpacing:"2px", textTransform:"uppercase", color:"#4a3a35", fontWeight:700, marginBottom:"6px", fontFamily:"'Inter',sans-serif" }}>Top Supplier</div>
+                          <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"1.1rem", letterSpacing:"1.5px", background:"linear-gradient(135deg,#f0a030,#e63232)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+                            {topSupplier ? topSupplier[0] : "—"}
+                          </div>
+                          <div style={{ fontSize:"0.68rem", color:"#5a4a45", marginTop:"2px", fontFamily:"'Inter',sans-serif" }}>
+                            {topSupplier ? `${topSupplier[1]} shipment${topSupplier[1] > 1 ? "s" : ""}` : "No data yet"}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Avg Delay Duration */}
+                    {(() => {
+                      const delayed = shipments.filter(s => s.Status === "Delayed" && s.DelayDuration);
+                      const avgDelay = delayed.length ? Math.round(delayed.reduce((sum, s) => sum + (s.DelayDuration || 0), 0) / delayed.length) : 0;
+                      return (
+                        <div style={{ marginBottom:"1.4rem", padding:"1rem", background:"rgba(255,255,255,0.02)", borderRadius:"10px", border:"1px solid rgba(255,255,255,0.04)" }}>
+                          <div style={{ fontSize:"0.58rem", letterSpacing:"2px", textTransform:"uppercase", color:"#4a3a35", fontWeight:700, marginBottom:"6px", fontFamily:"'Inter',sans-serif" }}>Avg Delay</div>
+                          <div style={{ display:"flex", alignItems:"baseline", gap:"4px" }}>
+                            <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"2rem", color: avgDelay > 0 ? "#e63232" : "#e8c090", letterSpacing:"2px" }}>{avgDelay}</span>
+                            <span style={{ fontSize:"0.72rem", color:"#5a4a45", fontFamily:"'Inter',sans-serif" }}>days avg</span>
+                          </div>
+                          <div style={{ fontSize:"0.68rem", color:"#5a4a45", fontFamily:"'Inter',sans-serif" }}>
+                            {delayed.length > 0 ? `across ${delayed.length} delayed shipment${delayed.length > 1 ? "s" : ""}` : "No delays recorded"}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Total Delivered */}
+                    <div style={{ padding:"1rem", background:"rgba(255,255,255,0.02)", borderRadius:"10px", border:"1px solid rgba(255,255,255,0.04)" }}>
+                      <div style={{ fontSize:"0.58rem", letterSpacing:"2px", textTransform:"uppercase", color:"#4a3a35", fontWeight:700, marginBottom:"6px", fontFamily:"'Inter',sans-serif" }}>Delivered</div>
+                      <div style={{ display:"flex", alignItems:"baseline", gap:"4px" }}>
+                        <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"2rem", color:"#e8c090", letterSpacing:"2px" }}>{delivered}</span>
+                        <span style={{ fontSize:"0.72rem", color:"#5a4a45", fontFamily:"'Inter',sans-serif" }}>of {totalShipments} total</span>
+                      </div>
                     </div>
+
                   </div>
                 </div>
 
                 {/* Recent Shipments Table */}
-                <div className="card-d">
+                <div className="card-d" style={{ display:"flex", flexDirection:"column" }}>
                   <div className="card-top-d" />
 
                   {/* Header */}
@@ -323,7 +331,7 @@ export default function CustomerDashboardDark({ toggleTheme, customerId }) {
                   </div>
 
                   {/* Rows */}
-                  <div>
+                  <div style={{ flex:1 }}>
                     {recentShipments.length === 0 ? (
                       <div style={{ padding:"4rem", textAlign:"center" }}>
                         <div style={{ fontSize:"2.5rem", marginBottom:"1rem", opacity:0.4 }}>📦</div>
@@ -333,7 +341,7 @@ export default function CustomerDashboardDark({ toggleTheme, customerId }) {
                       const sc = statusConfig(ship.Status);
                       return (
                         <div key={i} className="ship-row-d"
-                          onClick={() => navigate(`/customer/tracking/${ship.ShipmentId}`)}
+                          onClick={() => navigate(`/customer/shipments`)}
                           style={{ borderBottom: i < recentShipments.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none", animation:`rowIn 0.3s ${i * 0.06}s ease forwards`, opacity:0 }}
                         >
                           <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"0.88rem", letterSpacing:"1px", background:"linear-gradient(135deg,#f0a030,#e63232)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>{ship.ShipmentId}</div>
@@ -352,13 +360,29 @@ export default function CustomerDashboardDark({ toggleTheme, customerId }) {
                               {ship.Status}
                             </span>
                           </div>
-                          <div style={{ fontSize:"0.78rem", color: ship.DelayReason ? "#e63232" : "#3a2a25", fontFamily:"'Inter',sans-serif" }}>{ship.DelayReason || "—"}</div>
+                          <div style={{ fontSize:"0.78rem", color: ship.DelayReason ? "#e63232" : "#3a2a25", fontFamily:"'Inter',sans-serif" }}>{ship.DelayReason?.Code || "—"}</div>
                         </div>
                       );
                     })}
                   </div>
 
-                  <div style={{ height:"1px", background:"linear-gradient(90deg,transparent,rgba(240,160,48,0.3),transparent)" }} />
+                  {recentShipments.length > 0 && recentShipments.length < 3 && (
+                   <div style={{ padding:"1.2rem 1.6rem", borderTop:"1px solid rgba(255,255,255,0.04)", marginTop:"auto" }}>
+                   <div
+                      onClick={() => navigate("/customer/shipments")}
+                      style={{ padding:"14px 18px", background:"linear-gradient(135deg,rgba(230,50,50,0.08),rgba(240,160,48,0.06))", border:"1px solid rgba(230,50,50,0.2)", borderRadius:"10px", cursor:"pointer", display:"flex", flexDirection:"row", justifyContent:"space-between", alignItems:"center", transition:"all 0.25s" }}
+                   
+                      onMouseEnter={e => { e.currentTarget.style.background="linear-gradient(135deg,rgba(230,50,50,0.14),rgba(240,160,48,0.1))"; e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 6px 20px rgba(230,50,50,0.15)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background="linear-gradient(135deg,rgba(230,50,50,0.08),rgba(240,160,48,0.06))"; e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="none"; }}
+                    >
+                      <div>
+                        <div style={{ fontSize:"0.6rem", letterSpacing:"2px", textTransform:"uppercase", color:"#5a4a45", fontWeight:700, marginBottom:"3px", fontFamily:"'Inter',sans-serif" }}>Need help?</div>
+                        <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"1.2rem", letterSpacing:"2px", background:"linear-gradient(90deg,#e0d8d0,#e63232)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>VIEW ALL YOUR SHIPMENTS →</div>
+                      </div>
+                      <div style={{ fontSize:"1.8rem", opacity:0.4 }}>📋</div>
+                    </div>
+                  </div>
+                )}
                 </div>
               </div>
             </div>

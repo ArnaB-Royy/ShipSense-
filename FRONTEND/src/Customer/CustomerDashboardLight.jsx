@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import CustomerSidebarLight from "./Components/CustomerSidebarLight";
 import CustomerNavbarLight from "./Components/CustomerNavbarLight";
 
-const CUSTOMER_SHIPMENTS_API = "http://localhost:5000/api/customer/shipments"; // adjust to your endpoint
+const ME_API        = "http://localhost:5000/api/auth/me";
+const SHIPMENTS_API = "http://localhost:5000/api/shipments/my";
 
 const C = {
   bg: "#faf6f0", bgDeep: "#f3ede4", bgCard: "rgba(255,250,245,0.9)",
@@ -16,9 +17,10 @@ const C = {
 };
 const font = { heading: "'Cormorant Garamond', serif", body: "'DM Sans', sans-serif" };
 
-export default function CustomerDashboardLight({ toggleTheme, customerName = "Alex" }) {
+export default function CustomerDashboardLight({ toggleTheme }) {
   const navigate = useNavigate();
   const [hoveredWidth, setHoveredWidth] = useState(0);
+  const [profile, setProfile] = useState(null);
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [animated, setAnimated] = useState(false);
@@ -30,9 +32,14 @@ export default function CustomerDashboardLight({ toggleTheme, customerName = "Al
   const fetchShipments = async () => {
     try {
       setLoading(true);
-      const res = await fetch(CUSTOMER_SHIPMENTS_API);
-      const json = await res.json();
-      if (json.success) setShipments(json.data);
+      const [pRes, sRes] = await Promise.all([
+        fetch(ME_API,        { credentials: "include" }),
+        fetch(SHIPMENTS_API, { credentials: "include" }),
+      ]);
+      const pJson = await pRes.json();
+      const sJson = await sRes.json();
+      if (pJson.success) setProfile(pJson.user);
+      if (sJson.success) setShipments(sJson.data);
       setTimeout(() => setAnimated(true), 150);
     } catch (err) {
       console.error("Customer dashboard fetch error:", err);
@@ -68,8 +75,7 @@ export default function CustomerDashboardLight({ toggleTheme, customerName = "Al
   ];
 
   const handleTrack = () => {
-    const id = trackInput.trim();
-    if (id) navigate(`/customer/track/${id}`);
+    if (trackInput.trim()) navigate("/customer/shipments");
   };
 
   return (
@@ -187,7 +193,7 @@ export default function CustomerDashboardLight({ toggleTheme, customerName = "Al
           <div className="fade-up-dl" style={{ marginBottom: "1.6rem", position: "relative", zIndex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
               <div style={{ width: "24px", height: "2px", background: `linear-gradient(90deg,${C.rose},${C.gold})`, borderRadius: "2px" }} />
-              <span style={{ fontSize: "0.6rem", letterSpacing: "4px", textTransform: "uppercase", background: `linear-gradient(90deg,${C.rose},${C.gold})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>Welcome back, {customerName}</span>
+              <span style={{ fontSize: "0.6rem", letterSpacing: "4px", textTransform: "uppercase", background: `linear-gradient(90deg,${C.rose},${C.gold})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>Welcome back, {profile?.Name ? profile.Name.split(" ")[0] : localStorage.getItem("userName") ? localStorage.getItem("userName").split(" ")[0] : ""}</span>
             </div>
             <h1 style={{ fontFamily: font.heading, fontSize: "2.8rem", fontWeight: 600, background: `linear-gradient(135deg,${C.ink} 0%,${C.inkMid} 50%,${C.rose} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", color: "transparent", letterSpacing: "1px", lineHeight: 1, margin: 0 }}>My Dashboard</h1>
             <div style={{ fontSize: "0.74rem", color: C.inkLight, marginTop: "6px", fontFamily: font.body }}>
@@ -226,41 +232,68 @@ export default function CustomerDashboardLight({ toggleTheme, customerName = "Al
                 {/* LEFT: Quick Track + Status Breakdown */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
 
-                  {/* Quick Track */}
+                  {/* Quick Stats */}
                   <div className="card-l">
                     <div className="card-top-l" />
-                    <div style={{ padding: "1.4rem 1.5rem" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                        <div style={{ width: "3px", height: "14px", background: `linear-gradient(to bottom,${C.rose},${C.gold})`, borderRadius: "2px" }} />
-                        <div style={{ fontSize: "0.6rem", letterSpacing: "2.5px", textTransform: "uppercase", color: C.inkFaint, fontWeight: 700, fontFamily: font.body }}>Quick Track</div>
+                    <div style={{ padding:"1.4rem 1.5rem" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"6px" }}>
+                        <div style={{ width:"3px", height:"14px", background:`linear-gradient(to bottom,${C.rose},${C.gold})`, borderRadius:"2px" }} />
+                        <div style={{ fontSize:"0.6rem", letterSpacing:"2.5px", textTransform:"uppercase", color:C.inkFaint, fontWeight:700, fontFamily:font.body }}>Analytics</div>
                       </div>
-                      <div style={{ fontFamily: font.heading, fontSize: "1.35rem", fontWeight: 600, color: C.ink, marginBottom: "4px", lineHeight: 1.2 }}>Track a Shipment</div>
-                      <div style={{ fontSize: "0.72rem", color: C.inkLight, fontFamily: font.body, marginBottom: "1.1rem" }}>Enter your shipment ID to view live status</div>
+                      <div style={{ fontFamily:font.heading, fontSize:"1.35rem", fontWeight:600, color:C.ink, marginBottom:"1.4rem", lineHeight:1.2 }}>Quick Stats</div>
 
-                      {/* Input */}
-                      <div style={{
-                        display: "flex", alignItems: "center", gap: "8px",
-                        background: C.bgDeep,
-                        border: `1px solid ${trackFocused ? C.rose : C.border}`,
-                        borderRadius: "10px", padding: "10px 14px",
-                        marginBottom: "10px",
-                        transition: "border-color 0.2s, box-shadow 0.2s",
-                        boxShadow: trackFocused ? `0 0 0 3px ${C.roseLight}` : "none",
-                      }}>
-                        <span style={{ fontSize: "0.9rem", opacity: 0.6 }}>🔍</span>
-                        <input
-                          className="track-input-c"
-                          placeholder="e.g. SHP-00123"
-                          value={trackInput}
-                          onChange={e => setTrackInput(e.target.value)}
-                          onFocus={() => setTrackFocused(true)}
-                          onBlur={() => setTrackFocused(false)}
-                          onKeyDown={e => e.key === "Enter" && handleTrack()}
-                        />
-                      </div>
-                      <button className="track-btn-c" onClick={handleTrack} style={{ width: "100%", justifyContent: "center", display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span>🚀</span> Track Shipment
-                      </button>
+                      {/* On-Time Rate */}
+                      {(() => {
+                        const onTimeCount = shipments.filter(s => s.Status !== "Delayed").length;
+                        const onTimePct = totalShipments ? Math.round((onTimeCount / totalShipments) * 100) : 0;
+                        return (
+                          <div style={{ marginBottom:"1.4rem" }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
+                              <span style={{ fontSize:"0.72rem", color:C.inkMid, fontFamily:font.body, fontWeight:500 }}>On-Time Rate</span>
+                              <span style={{ fontFamily:font.heading, fontSize:"1.6rem", fontWeight:600, color: onTimePct >= 70 ? C.green : C.roseDark }}>{onTimePct}%</span>
+                            </div>
+                            <div style={{ height:"4px", background:C.roseLight, borderRadius:"999px", overflow:"hidden", border:`1px solid ${C.border}` }}>
+                              <div className="bar-fill-l" style={{ width: animated ? `${onTimePct}%` : "0%", background:`linear-gradient(90deg,${C.rose},${C.gold})` }} />
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Top Supplier */}
+                      {(() => {
+                        const supplierMap = {};
+                        shipments.forEach(s => { supplierMap[s.Supplier] = (supplierMap[s.Supplier] || 0) + 1; });
+                        const topSupplier = Object.entries(supplierMap).sort((a,b) => b[1]-a[1])[0];
+                        return (
+                          <div style={{ marginBottom:"1rem", padding:"1rem", background:C.bgDeep, borderRadius:"10px", border:`1px solid ${C.border}` }}>
+                            <div style={{ fontSize:"0.58rem", letterSpacing:"2px", textTransform:"uppercase", color:C.inkFaint, fontWeight:700, marginBottom:"6px", fontFamily:font.body }}>Top Supplier</div>
+                            <div style={{ fontFamily:font.heading, fontSize:"1.1rem", fontWeight:600, fontStyle:"italic", background:`linear-gradient(135deg,${C.rose},${C.gold})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+                              {topSupplier ? topSupplier[0] : "—"}
+                            </div>
+                            <div style={{ fontSize:"0.68rem", color:C.inkLight, marginTop:"2px", fontFamily:font.body }}>
+                              {topSupplier ? `${topSupplier[1]} shipment${topSupplier[1] > 1 ? "s" : ""}` : "No data yet"}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Avg Delay */}
+                      {(() => {
+                        const delayed = shipments.filter(s => s.Status === "Delayed" && s.DelayDuration);
+                        const avgDelay = delayed.length ? Math.round(delayed.reduce((sum,s) => sum + (s.DelayDuration||0), 0) / delayed.length) : 0;
+                        return (
+                          <div style={{ padding:"1rem", background:C.bgDeep, borderRadius:"10px", border:`1px solid ${C.border}` }}>
+                            <div style={{ fontSize:"0.58rem", letterSpacing:"2px", textTransform:"uppercase", color:C.inkFaint, fontWeight:700, marginBottom:"6px", fontFamily:font.body }}>Avg Delay</div>
+                            <div style={{ display:"flex", alignItems:"baseline", gap:"4px" }}>
+                              <span style={{ fontFamily:font.heading, fontSize:"2rem", fontWeight:600, color: avgDelay > 0 ? C.roseDark : C.green }}>{avgDelay}</span>
+                              <span style={{ fontSize:"0.72rem", color:C.inkLight, fontFamily:font.body }}>days avg</span>
+                            </div>
+                            <div style={{ fontSize:"0.68rem", color:C.inkLight, fontFamily:font.body }}>
+                              {delayed.length > 0 ? `across ${delayed.length} delayed shipment${delayed.length > 1 ? "s" : ""}` : "No delays recorded"}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -335,7 +368,7 @@ export default function CustomerDashboardLight({ toggleTheme, customerName = "Al
                         <div style={{ fontSize: "2.5rem", marginBottom: "1rem", opacity: 0.4 }}>📦</div>
                         <div style={{ color: C.inkLight, fontSize: "0.82rem", fontFamily: font.body, marginBottom: "1rem" }}>No shipments yet</div>
                         <div
-                          onClick={() => navigate("/customer/support")}
+                          onClick={() => navigate("/customer/help")}
                           style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.72rem", color: C.rose, fontFamily: font.body, fontWeight: 700, cursor: "pointer", letterSpacing: "1px", textTransform: "uppercase", borderBottom: `1px solid ${C.borderRose}`, paddingBottom: "2px" }}
                         >Contact Support →</div>
                       </div>
@@ -343,7 +376,7 @@ export default function CustomerDashboardLight({ toggleTheme, customerName = "Al
                       const sc = statusConfig(ship.Status);
                       return (
                         <div key={i} className="ship-row-l"
-                          onClick={() => navigate(`/customer/track/${ship.ShipmentId}`)}
+                          onClick={() => navigate(`/customer/shipments`)}
                           style={{ borderBottom: i < recentShipments.length - 1 ? `1px solid ${C.border}` : "none", animation: `rowInL 0.3s ${i * 0.05}s ease forwards`, opacity: 0 }}
                         >
                           <div style={{ fontFamily: font.heading, fontSize: "0.95rem", fontWeight: 600, fontStyle: "italic", background: `linear-gradient(135deg,${C.rose},${C.gold})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{ship.ShipmentId}</div>

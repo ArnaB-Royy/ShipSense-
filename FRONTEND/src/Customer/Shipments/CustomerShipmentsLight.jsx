@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import CustomerSidebarLight from "../Components/CustomerSidebarLight";
 import CustomerNavbarLight from "../Components/CustomerNavbarLight";
 
-const API = "http://localhost:5000/api/shipments";
+const API = "http://localhost:5000/api/shipments/my";
 const STATUSES = ["All", "Pending", "In Transit", "Delivered", "Delayed"];
 
 const C = {
@@ -31,8 +31,9 @@ export default function CustomerShipmentsLight({ toggleTheme }) {
       let url = `${API}?`;
       if (search) url += `search=${search}&`;
       if (statusFilter !== "All") url += `Status=${statusFilter}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { credentials: "include" });
       const data = await res.json();
+      if (!data.success) { setShipments([]); return; }
       setShipments(data.data);
     } catch (err) {
       console.error("Failed to fetch shipments");
@@ -333,7 +334,7 @@ export default function CustomerShipmentsLight({ toggleTheme }) {
                     { label: "ETA",          value: formatDate(s.ETA) },
                     { label: "Date Created", value: formatDate(s.createdAt) },
                     { label: "Last Updated", value: new Date(s.updatedAt).toLocaleString() },
-                    ...(s.DelayReason       ? [{ label: "Delay Reason",   value: s.DelayReason,            danger: true }] : []),
+                    ...(s.DelayReason?.Code ? [{ label: "Delay Reason", value: s.DelayReason.Code, danger: true }] : []),
                     ...(s.DelayDuration > 0 ? [{ label: "Delay Duration", value: `+${s.DelayDuration} hrs`, danger: true }] : []),
                   ].map((row, i) => (
                     <div key={i} className="detail-row-l">
@@ -349,7 +350,7 @@ export default function CustomerShipmentsLight({ toggleTheme }) {
                     <div>
                       <div style={{ fontSize: "0.8rem", color: C.rose, fontWeight: 700, marginBottom: "3px", fontFamily: font.body }}>Shipment Delayed</div>
                       <div style={{ fontSize: "0.76rem", color: C.inkMid, lineHeight: 1.5, fontFamily: font.body }}>
-                        {s.DelayReason ? `Reason: ${s.DelayReason}.` : "This shipment has been delayed."}{" "}
+                        {s.DelayReason?.Code ? `${s.DelayReason.Code} — ${s.DelayReason.Reason || ""}. Category: ${s.DelayReason.Category || ""}.` : "This shipment has been delayed."}{" "}
                         {s.DelayDuration > 0 ? `Expected additional delay: ${s.DelayDuration} hours.` : ""}
                       </div>
                     </div>

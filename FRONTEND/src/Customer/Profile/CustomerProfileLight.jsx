@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import CustomerSidebarLight from "../Components/CustomerSidebarLight";
 import CustomerNavbarLight from "../Components/CustomerNavbarLight";
 
+const ME_API        = "http://localhost:5000/api/auth/me";
+const USERS_API     = "http://localhost:5000/api/users";
+const SHIPMENTS_API = "http://localhost:5000/api/shipments/my";
+
 const C = {
   bg: "#faf6f0",
   bgDeep: "#f3ede4",
@@ -37,36 +41,62 @@ export default function CustomerProfileLight({ toggleTheme }) {
   const [showPwSection, setShowPwSection] = useState(false);
   const [hoveredWidth, setHoveredWidth] = useState(0);
 
-  const [profile, setProfile] = useState({
-    name: "Aryan Mehta",
-    email: "aryan.mehta@example.com",
-    phone: "+91 98765 43210",
-    address: "14B, Park Street, Kolkata, West Bengal 700016",
-    status: "active",
-  });
-
-  const [draft, setDraft] = useState({ ...profile });
+  const [userId, setUserId] = useState(null);
+  const [joinedDate, setJoinedDate] = useState("");
+  const [shipments, setShipments] = useState([]);
+  const [profile, setProfile] = useState({ Name: "", Email: "", Company: "", IsActive: true });
+  const [draft, setDraft] = useState({ Name: "", Email: "", Company: "", IsActive: true });
   const [pw, setPw] = useState({ old: "", next: "", confirm: "" });
   const [pwError, setPwError] = useState("");
 
   useEffect(() => {
-    const link = document.createElement("link");
-    link.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500;600&family=Dancing+Script:wght@600&display=swap";
-    link.rel = "stylesheet";
-    document.head.appendChild(link);
     setTimeout(() => setVisible(true), 100);
+    fetchProfile();
   }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const [pRes, sRes] = await Promise.all([
+        fetch(ME_API, { credentials: "include" }),
+        fetch(SHIPMENTS_API, { credentials: "include" }),
+      ]);
+      const pJson = await pRes.json();
+      const sJson = await sRes.json();
+      if (pJson.success) {
+        const u = pJson.user;
+        setUserId(u._id);
+        setJoinedDate(u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" }) : "");
+        const p = { Name: u.Name, Email: u.Email, Company: u.Company || "", IsActive: u.IsActive };
+        setProfile(p);
+        setDraft(p);
+      }
+      if (sJson.success) setShipments(sJson.data);
+    } catch (err) {
+      console.error("Profile fetch error:", err);
+    }
+  };
 
   const hover = { transition: "transform 0.25s, box-shadow 0.25s" };
 
   const handleSave = async () => {
     setSaveStatus("saving");
     try {
-      await new Promise((r) => setTimeout(r, 900));
-      setProfile({ ...draft });
-      setSaveStatus("saved");
-      setEditMode(false);
-      setTimeout(() => setSaveStatus(null), 2500);
+      const res = await fetch(`${USERS_API}/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ Name: draft.Name, Email: draft.Email, Company: draft.Company }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setProfile({ ...draft });
+        setSaveStatus("saved");
+        setEditMode(false);
+        setTimeout(() => setSaveStatus(null), 2500);
+      } else {
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus(null), 2500);
+      }
     } catch {
       setSaveStatus("error");
       setTimeout(() => setSaveStatus(null), 2500);
@@ -147,7 +177,7 @@ export default function CustomerProfileLight({ toggleTheme }) {
     </div>
   );
 
-  const isActive = profile.status === "active";
+  const isActive = profile.IsActive;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: C.bg, color: C.ink, fontFamily: font.body }}>
@@ -254,12 +284,12 @@ export default function CustomerProfileLight({ toggleTheme }) {
                     display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                   }}>
                     <span style={{ fontFamily: font.heading, fontSize: "1.5rem", fontWeight: 600, fontStyle: "italic", background: `linear-gradient(135deg,${C.rose},${C.gold})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                      {profile.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                      {profile.Name ? profile.Name.split(" ").map((n) => n[0]).join("").slice(0,2).toUpperCase() : "?"}
                     </span>
                   </div>
                   <div>
-                    <div style={{ fontFamily: font.heading, fontSize: "1.5rem", fontWeight: 600, color: C.ink, letterSpacing: "0.5px" }}>{profile.name}</div>
-                    <div style={{ fontSize: "0.72rem", color: C.inkLight, letterSpacing: "0.5px", fontFamily: font.body }}>{profile.email}</div>
+                    <div style={{ fontFamily: font.heading, fontSize: "1.5rem", fontWeight: 600, color: C.ink, letterSpacing: "0.5px" }}>{profile.Name}</div>
+                    <div style={{ fontSize: "0.72rem", color: C.inkLight, letterSpacing: "0.5px", fontFamily: font.body }}>{profile.Email}</div>
                   </div>
                 </div>
 
@@ -268,21 +298,9 @@ export default function CustomerProfileLight({ toggleTheme }) {
                   {editMode ? "Editing Profile" : "Profile Info"}
                 </div>
 
-                {fieldBlock("Full Name", "name")}
-                {fieldBlock("Email Address", "email", "email")}
-                {fieldBlock("Phone Number", "phone", "tel")}
-                <div style={{ marginBottom: "1.3rem" }}>
-                  <label style={labelStyle}>Address</label>
-                  <textarea
-                    disabled={!editMode}
-                    value={draft.address}
-                    onChange={(e) => setDraft((d) => ({ ...d, address: e.target.value }))}
-                    rows={3}
-                    style={{ ...inputStyle(!editMode), resize: "vertical" }}
-                    onFocus={(e) => { if (editMode) { e.target.style.borderColor = C.gold; e.target.style.boxShadow = `0 0 0 3px ${C.goldLight}`; } }}
-                    onBlur={(e) => { e.target.style.borderColor = editMode ? C.borderRose : C.border; e.target.style.boxShadow = "none"; }}
-                  />
-                </div>
+                {fieldBlock("Full Name", "Name")}
+                {fieldBlock("Email Address", "Email", "email")}
+                {fieldBlock("Company", "Company")}
 
                 {/* ACTION BUTTONS */}
                 <div style={{ display: "flex", gap: "0.8rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
@@ -343,7 +361,7 @@ export default function CustomerProfileLight({ toggleTheme }) {
                         {isActive ? "Active" : "Inactive"}
                       </div>
                       <div style={{ fontSize: "0.68rem", color: C.inkLight, letterSpacing: "0.5px", fontFamily: font.body }}>
-                        {isActive ? "Your account is in good standing." : "Your account has been deactivated."}
+                        {isActive ? "Your account is in good standing." : "Your account has been deactivated."}{joinedDate ? ` · Joined ${joinedDate}` : ""}
                       </div>
                     </div>
                     <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: isActive ? C.gold : C.rose, animation: isActive ? "pulseR 2s infinite" : "none", flexShrink: 0 }} />
@@ -351,7 +369,11 @@ export default function CustomerProfileLight({ toggleTheme }) {
 
                   {/* QUICK STATS */}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "0.7rem" }}>
-                    {[{ val: "12", label: "Shipments" }, { val: "8", label: "Delivered" }, { val: "4", label: "Active" }].map((m, i) => (
+                    {[
+                      { val: shipments.length, label: "Shipments" },
+                      { val: shipments.filter(s => s.Status === "Delivered").length, label: "Delivered" },
+                      { val: shipments.filter(s => s.Status === "In Transit").length, label: "In Transit" },
+                    ].map((m, i) => (
                       <div key={i} style={{ textAlign: "center", padding: "0.8rem 0.5rem", background: C.bgDeep, borderRadius: "5px", border: `1px solid ${C.border}` }}>
                         <div style={{ fontFamily: font.heading, fontSize: "1.6rem", fontWeight: 600, background: `linear-gradient(135deg,${C.rose},${C.gold})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{m.val}</div>
                         <div style={{ fontSize: "0.58rem", color: C.inkFaint, letterSpacing: "1px", textTransform: "uppercase", fontFamily: font.body }}>{m.label}</div>

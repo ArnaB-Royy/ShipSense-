@@ -28,14 +28,33 @@ const links = [
     ),
   },
   {
-    label: "Track Shipment",
-    path: "/customer/tracking",
+    label: "Invoice",
+    path: "/customer/invoice",
     icon: (active, hov) => (
       <svg width="22" height="22" viewBox="0 0 16 16" fill="none">
-        <defs><linearGradient id="cgt" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#e63232"/><stop offset="100%" stopColor="#f0a030"/></linearGradient></defs>
-        <circle cx="7" cy="7" r="4.5" stroke={active || hov ? "url(#cgt)" : "#6a2828"} strokeWidth="1.5"/>
-        <line x1="10.5" y1="10.5" x2="14" y2="14" stroke={active || hov ? "url(#cgt)" : "#6a2828"} strokeWidth="1.5" strokeLinecap="round"/>
-        <circle cx="7" cy="7" r="1.5" fill={active || hov ? "#e63232" : "#6a2828"}/>
+        <defs><linearGradient id="cgi" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#e63232"/><stop offset="100%" stopColor="#f0a030"/></linearGradient></defs>
+        {/* Document body */}
+        <rect x="2.5" y="1.5" width="9" height="12" rx="1.2" stroke={active || hov ? "url(#cgi)" : "#6a2828"} strokeWidth="1.5" fill={active ? "rgba(230,50,50,0.08)" : "none"}/>
+        {/* Folded corner */}
+        <path d="M9 1.5v3h3" stroke={active || hov ? "url(#cgi)" : "#6a2828"} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+        {/* Lines representing invoice rows */}
+        <line x1="4.5" y1="7" x2="9.5" y2="7" stroke={active || hov ? "url(#cgi)" : "#6a2828"} strokeWidth="1.1"/>
+        <line x1="4.5" y1="9" x2="8"   y2="9" stroke={active || hov ? "url(#cgi)" : "#6a2828"} strokeWidth="1.1"/>
+        <line x1="4.5" y1="11" x2="9"  y2="11" stroke={active || hov ? "url(#cgi)" : "#6a2828"} strokeWidth="1.1"/>
+        {/* Download arrow on the right side */}
+        <path d="M12.5 10v4m0 0l-1.5-1.5M12.5 14l1.5-1.5" stroke={active || hov ? "#f0a030" : "#6a2828"} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
+    label: "Help & Guide",
+    path: "/customer/help",
+    icon: (active, hov) => (
+      <svg width="22" height="22" viewBox="0 0 16 16" fill="none">
+        <defs><linearGradient id="cgh" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#e63232"/><stop offset="100%" stopColor="#f0a030"/></linearGradient></defs>
+        <circle cx="8" cy="8" r="6" stroke={active || hov ? "url(#cgh)" : "#6a2828"} strokeWidth="1.5" fill={active ? "rgba(230,50,50,0.08)" : "none"}/>
+        <path d="M6.5 6.5a1.5 1.5 0 012.5 1.1c0 1-1 1.4-1 2.4" stroke={active || hov ? "url(#cgh)" : "#6a2828"} strokeWidth="1.4" strokeLinecap="round"/>
+        <circle cx="8" cy="11.5" r="0.7" fill={active || hov ? "#f0a030" : "#6a2828"}/>
       </svg>
     ),
   },
@@ -47,34 +66,6 @@ const links = [
         <defs><linearGradient id="cgp" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#e63232"/><stop offset="100%" stopColor="#f0a030"/></linearGradient></defs>
         <circle cx="8" cy="5.5" r="2.8" stroke={active || hov ? "url(#cgp)" : "#6a2828"} strokeWidth="1.5"/>
         <path d="M2.5 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke={active || hov ? "url(#cgp)" : "#6a2828"} strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-  },
-  {
-    label: "Notifications",
-    path: "/customer/notifications",
-    icon: (active, hov) => (
-      <svg width="22" height="22" viewBox="0 0 16 16" fill="none">
-        <defs><linearGradient id="cgn" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#e63232"/><stop offset="100%" stopColor="#f0a030"/></linearGradient></defs>
-        <path d="M8 2a5 5 0 00-5 5v2.5L2 11.5A.8.8 0 002.8 13h10.4a.8.8 0 00.72-1L12.5 9.5V7a5 5 0 00-5-5z"
-          stroke={active || hov ? "url(#cgn)" : "#6a2828"} strokeWidth="1.4"
-          fill={active ? "rgba(230,50,50,0.12)" : "none"} />
-        <path d="M6.5 13a1.5 1.5 0 003 0" stroke={active || hov ? "url(#cgn)" : "#6a2828"} strokeWidth="1.3"/>
-      </svg>
-    ),
-  },
-  {
-    label: "Support",
-    path: "/customer/support",
-    icon: (active, hov) => (
-      <svg width="22" height="22" viewBox="0 0 16 16" fill="none">
-        <defs><linearGradient id="cgsu" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#e63232"/><stop offset="100%" stopColor="#f0a030"/></linearGradient></defs>
-        <path d="M2 5a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H9l-3 2v-2H4a2 2 0 01-2-2V5z"
-          stroke={active || hov ? "url(#cgsu)" : "#6a2828"} strokeWidth="1.5"
-          fill={active ? "rgba(230,50,50,0.1)" : "none"} />
-        <circle cx="6"  cy="7.5" r="0.8" fill={active || hov ? "#e63232" : "#6a2828"} />
-        <circle cx="8"  cy="7.5" r="0.8" fill={active || hov ? "#f0a030" : "#6a2828"} />
-        <circle cx="10" cy="7.5" r="0.8" fill={active || hov ? "#e63232" : "#6a2828"} />
       </svg>
     ),
   },
@@ -154,26 +145,33 @@ export default function CustomerSidebarDark({ hoveredWidth, setHoveredWidth }) {
       </nav>
 
       {/* LOGOUT */}
-      <div style={{ padding:"0 12px 16px", width:"100%", display:"flex", justifyContent:"center", overflow:"visible" }}>
-        <div style={{ width:"44px", height:"44px", position:"relative" }}>
+      <div style={{ padding: "0 12px 16px", width: "100%", display: "flex", justifyContent: "center", overflow: "visible" }}>
+        <div style={{ width: "44px", height: "44px", position: "relative" }}>
           <div
-            onClick={() => { localStorage.removeItem("customerToken"); sessionStorage.removeItem("customerToken"); navigate("/customer/login"); }}
+            onClick={() => { localStorage.clear(); navigate("/"); }}
             onMouseEnter={() => { setHovered("logout"); setHoveredWidth(110); }}
             onMouseLeave={() => { setHovered(null); setHoveredWidth(0); }}
             title="Logout"
             style={{
-              display:"flex", alignItems:"center",
-              height:"44px", borderRadius:"999px", cursor:"pointer",
+              display: "flex", alignItems: "center",
+              height: "44px", borderRadius: "999px",
+              cursor: "pointer",
               width: hovered === "logout" ? "130px" : "44px",
-              position:"absolute", left:0, top:0,
-              zIndex:200, overflow:"hidden",
-              transition:"width 0.35s cubic-bezier(0.34,1.4,0.64,1), background 0.25s, box-shadow 0.35s",
-              border: hovered === "logout" ? "1px solid rgba(220,40,40,0.5)" : "1px solid rgba(160,20,20,0.25)",
-              background: hovered === "logout" ? "rgba(180,20,20,0.18)" : "rgba(150,20,20,0.08)",
-              boxShadow: hovered === "logout" ? "0 0 16px rgba(200,20,20,0.3)" : "none",
+              position: "absolute", left: 0, top: 0,
+              zIndex: 200, overflow: "hidden",
+              transition: "width 0.35s cubic-bezier(0.34,1.4,0.64,1), background 0.25s, box-shadow 0.35s",
+              border: hovered === "logout"
+                ? "1px solid rgba(220,40,40,0.5)"
+                : "1px solid rgba(160,20,20,0.25)",
+              background: hovered === "logout"
+                ? "rgba(180,20,20,0.18)"
+                : "rgba(150,20,20,0.08)",
+              boxShadow: hovered === "logout"
+                ? "0 0 16px rgba(200,20,20,0.3)"
+                : "none"
             }}
           >
-            <div style={{ width:"44px", minWidth:"44px", height:"44px", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <div style={{ width: "44px", minWidth: "44px", height: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <svg width="22" height="22" viewBox="0 0 16 16" fill="none">
                 <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" stroke={hovered === "logout" ? "#e63232" : "#7a1818"} strokeWidth="1.5" strokeLinecap="round"/>
                 <path d="M10 11l3-3-3-3" stroke={hovered === "logout" ? "#e63232" : "#7a1818"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -181,9 +179,11 @@ export default function CustomerSidebarDark({ hoveredWidth, setHoveredWidth }) {
               </svg>
             </div>
             {hovered === "logout" && (
-              <span className="fade-label-c" style={{ fontSize:"0.82rem", color:"#e63232", fontFamily:"'Inter',sans-serif", fontWeight:500, whiteSpace:"nowrap", paddingRight:"16px" }}>
-                Logout
-              </span>
+              <span className="fade-label" style={{
+                fontSize: "0.82rem", color: "#e63232",
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 500, whiteSpace: "nowrap", paddingRight: "16px"
+              }}>Logout</span>
             )}
           </div>
         </div>
