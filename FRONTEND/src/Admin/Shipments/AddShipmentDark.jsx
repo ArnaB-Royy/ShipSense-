@@ -1,26 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminNavbarDark from "../Components/AdminNavbarDark";
 import AdminSidebarDark from "../Components/AdminSidebarDark";
 
 const API = "http://localhost:5000/api/shipments";
+const USERS_API = "http://localhost:5000/api/users";
+const DELAYCODES_API = "http://localhost:5000/api/delaycodes";
 
 export default function AddShipmentDark({ toggleTheme }) {
   const navigate = useNavigate();
   const [hoveredWidth, setHoveredWidth] = useState(0);
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [customers, setCustomers] = useState([]);
+  const [delayCodes, setDelayCodes] = useState([]);
   const [formData, setFormData] = useState({
     Supplier: "", Origin: "", Destination: "",
     ETA: "", Status: "In Transit", DelayReason: "", DelayDuration: 0,
+    AssignedCustomer: "",
   });
+
+  useEffect(() => {
+    fetch(`${USERS_API}?Role=customer`, { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (d.success) setCustomers(d.data); })
+      .catch(() => {});
+
+    fetch(DELAYCODES_API, { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (d.success) setDelayCodes(d.data); })
+      .catch(() => {});
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async () => {
-    // Whitespace-only check
     if (!formData.Supplier.trim() || !formData.Origin.trim() || !formData.Destination.trim() || !formData.ETA) {
       showNotification("error", "Please fill all required fields!");
       return;
@@ -29,7 +45,6 @@ export default function AddShipmentDark({ toggleTheme }) {
       showNotification("error", "Supplier name must be at least 2 characters!");
       return;
     }
-    // Case-insensitive same city check
     if (formData.Origin.trim().toLowerCase() === formData.Destination.trim().toLowerCase()) {
       showNotification("error", "Origin and Destination cannot be the same!");
       return;
@@ -49,7 +64,7 @@ export default function AddShipmentDark({ toggleTheme }) {
       return;
     }
     if (formData.Status === "Delayed" && !formData.DelayReason) {
-      showNotification("error", "Please select a delay reason for delayed shipments!");
+      showNotification("error", "Please select a delay code for delayed shipments!");
       return;
     }
 
@@ -62,16 +77,18 @@ export default function AddShipmentDark({ toggleTheme }) {
         Supplier: formData.Supplier.trim(),
         Origin: formData.Origin.trim(),
         Destination: formData.Destination.trim(),
+        AssignedCustomer: formData.AssignedCustomer || null,
       };
       const res = await fetch(API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
         showNotification("success", `${data.data.ShipmentId} created successfully!`);
-        setFormData({ Supplier: "", Origin: "", Destination: "", ETA: "", Status: "In Transit", DelayReason: "", DelayDuration: 0 });
+        setFormData({ Supplier: "", Origin: "", Destination: "", ETA: "", Status: "In Transit", DelayReason: "", DelayDuration: 0, AssignedCustomer: "" });
       } else {
         if (data.message?.includes("duplicate")) {
           showNotification("error", "A shipment with these details already exists!");
@@ -105,6 +122,9 @@ export default function AddShipmentDark({ toggleTheme }) {
     if (s === "Delivered") return "#60a5fa";
     return "#fbbf24";
   };
+
+  const selectedCustomerName = customers.find(c => c._id === formData.AssignedCustomer)?.Name || "";
+  const selectedDelayLabel = delayCodes.find(d => d._id === formData.DelayReason)?.Code || "";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#07060a", color: "#e0d8d0", fontFamily: "'Inter', sans-serif", overflow: "hidden" }}>
@@ -247,6 +267,19 @@ export default function AddShipmentDark({ toggleTheme }) {
                   <input className="form-input" type="text" name="Supplier" placeholder="e.g. Arnab Logistics" value={formData.Supplier} onChange={handleChange} />
                 </div>
 
+                <div style={{ marginBottom: "1rem" }}>
+                  <label style={{ fontSize: "0.62rem", letterSpacing: "2px", textTransform: "uppercase", color: "#8a7a70", marginBottom: "6px", display: "block", fontWeight: 600 }}>
+                    Assigned Customer
+                    <span style={{ marginLeft: "8px", fontSize: "0.55rem", color: "#4a3a35", letterSpacing: "1px", textTransform: "none" }}>— Optional</span>
+                  </label>
+                  <select className="form-input" name="AssignedCustomer" value={formData.AssignedCustomer} onChange={handleChange}>
+                    <option value="">No customer assigned</option>
+                    {customers.map(c => (
+                      <option key={c._id} value={c._id}>{c.Name} ({c.Email})</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <div>
                     <label style={{ fontSize: "0.62rem", letterSpacing: "2px", textTransform: "uppercase", color: "#8a7a70", marginBottom: "6px", display: "block", fontWeight: 600 }}>Origin <span style={{ color: "#e63232" }}>*</span></label>
@@ -291,15 +324,12 @@ export default function AddShipmentDark({ toggleTheme }) {
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <div>
-                    <label style={{ fontSize: "0.62rem", letterSpacing: "2px", textTransform: "uppercase", color: "#8a7a70", marginBottom: "6px", display: "block", fontWeight: 600 }}>Delay Reason</label>
+                    <label style={{ fontSize: "0.62rem", letterSpacing: "2px", textTransform: "uppercase", color: "#8a7a70", marginBottom: "6px", display: "block", fontWeight: 600 }}>Delay Code</label>
                     <select className="form-input" name="DelayReason" value={formData.DelayReason} onChange={handleChange}>
                       <option value="">None</option>
-                      <option value="Weather">Weather</option>
-                      <option value="Customs">Customs</option>
-                      <option value="Port Congestion">Port Congestion</option>
-                      <option value="Carrier Issue">Carrier Issue</option>
-                      <option value="Documentation">Documentation</option>
-                      <option value="Other">Other</option>
+                      {delayCodes.map(dc => (
+                        <option key={dc._id} value={dc._id}>{dc.Code} — {dc.Reason}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -321,12 +351,13 @@ export default function AddShipmentDark({ toggleTheme }) {
                 <div style={{ padding: "16px 18px" }}>
                   {[
                     { label: "Supplier", val: formData.Supplier },
+                    { label: "Customer", val: selectedCustomerName },
                     { label: "Route", val: formData.Origin && formData.Destination ? `${formData.Origin} → ${formData.Destination}` : "" },
                     { label: "ETA", val: formData.ETA ? new Date(formData.ETA).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "" },
                     { label: "Status", val: formData.Status, color: statusColor(formData.Status) },
-                    { label: "Delay", val: formData.DelayReason || "" },
+                    { label: "Delay Code", val: selectedDelayLabel },
                   ].map((item, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 5 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
                       <span style={{ fontSize: "0.65rem", letterSpacing: "1.5px", textTransform: "uppercase", color: "#5a4a45" }}>{item.label}</span>
                       <span style={{ fontSize: "0.82rem", color: item.val ? (item.color || "#d4c4b8") : "#3a2a25", fontWeight: item.val ? 500 : 400 }}>{item.val || "—"}</span>
                     </div>
@@ -348,8 +379,8 @@ export default function AddShipmentDark({ toggleTheme }) {
                   "Shipment ID is auto-generated",
                   "Origin and Destination must be different cities",
                   "ETA must be a future date",
-                  "If status is Delayed, add a delay reason",
-                  "Delay info is optional for other statuses",
+                  "If status is Delayed, add a delay code",
+                  "Assigning a customer lets them track this shipment",
                 ].map((tip, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "8px", marginBottom: i < 4 ? "10px" : "0" }}>
                     <div style={{ width: "4px", height: "4px", borderRadius: "50%", background: "linear-gradient(135deg,#e63232,#f0a030)", marginTop: "6px", flexShrink: 0 }} />

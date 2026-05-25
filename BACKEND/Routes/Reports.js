@@ -85,12 +85,25 @@ Router.get("/", async (req, res) => {
     // ── 5. DELAY REASON BREAKDOWN ──
     const delayReasons = await Shipment.aggregate([
       { $match: { DelayReason: { $ne: null } } },
-      { $group: {
-        _id: "$DelayReason",
-        count:    { $sum: 1 },
-        avgHours: { $avg: "$DelayDuration" }
-      }},
-      { $sort: { count: -1 } }
+      {
+        $lookup: {
+          from: "delaycodes",
+          localField: "DelayReason",
+          foreignField: "_id",
+          as: "delayCodeDoc",
+        },
+      },
+      { $unwind: "$delayCodeDoc" },
+      {
+        $group: {
+          _id: "$delayCodeDoc.Code",
+          reason:   { $first: "$delayCodeDoc.Reason" },
+          category: { $first: "$delayCodeDoc.Category" },
+          count:    { $sum: 1 },
+          avgHours: { $avg: "$DelayDuration" },
+        },
+      },
+      { $sort: { count: -1 } },
     ]);
 
     // ── 6. DELAY CODE STATS ──

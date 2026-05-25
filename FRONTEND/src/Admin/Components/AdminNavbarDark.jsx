@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://localhost:5000/api/users";
+const AUTH_API = "http://localhost:5000/api/auth";
+const USERS_API = "http://localhost:5000/api/users";
+
+const DEV_NAMES = ["Arnab Roy", "Juhi Thakur"];
 
 export default function AdminNavbarDark({ toggleTheme, pageTitle = "DASHBOARD", pageSubtitle = "OVERVIEW" }) {
   const navigate = useNavigate();
@@ -12,6 +15,13 @@ export default function AdminNavbarDark({ toggleTheme, pageTitle = "DASHBOARD", 
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [notification, setNotification] = useState(null);
+
+  useEffect(() => {
+    fetch(`${AUTH_API}/me`, { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (d.success) setProfileUser(d.user); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const full = "SHIPSENSE";
@@ -31,27 +41,26 @@ export default function AdminNavbarDark({ toggleTheme, pageTitle = "DASHBOARD", 
     return () => clearInterval(interval);
   }, []);
 
-  const openProfile = async () => {
-    try {
-      const res = await fetch(`${API}?search=Arnab Roy`);
-      const data = await res.json();
-      const user = data.data?.find(u => u.Name === "Arnab Roy" && u.Role === "admin");
-      if (user) {
-        setProfileUser(user);
-        setEditData({ ...user });
-        setIsEditing(false);
-        setProfileOpen(true);
-      }
-    } catch (err) {
-      console.error("Failed to fetch profile", err);
+  const openProfile = () => {
+    if (profileUser) {
+      setEditData({ ...profileUser });
+      setIsEditing(false);
+      setProfileOpen(true);
     }
   };
 
+  const handleLogout = async () => {
+    try { await fetch(`${AUTH_API}/logout`, { method: "POST", credentials: "include" }); } catch (_) {}
+    localStorage.clear();
+    navigate("/");
+  };
+  
   const handleUpdate = async () => {
     try {
-      const res = await fetch(`${API}/${profileUser._id}`, {
+      const res = await fetch(`${USERS_API}/${profileUser._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(editData),
       });
       const data = await res.json();
@@ -69,6 +78,12 @@ export default function AdminNavbarDark({ toggleTheme, pageTitle = "DASHBOARD", 
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 3500);
   };
+
+  const isDev = profileUser && DEV_NAMES.includes(profileUser.Name);
+
+  const initials = profileUser?.Name
+    ? profileUser.Name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
+    : "AD";
 
   const roleConfig = (role) => {
     switch (role) {
@@ -102,7 +117,6 @@ export default function AdminNavbarDark({ toggleTheme, pageTitle = "DASHBOARD", 
         @keyframes cursorBlink  { 0%,100%{opacity:1} 50%{opacity:0} }
         @keyframes slideUp      { from{opacity:0;transform:translateY(40px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
         @keyframes slideRight   { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
-
         @keyframes rootTextShift    { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
         @keyframes rootBadgeShimmer { 0%{background-position:200% center} 100%{background-position:-200% center} }
         @keyframes rootAvatarSpin   { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
@@ -118,63 +132,26 @@ export default function AdminNavbarDark({ toggleTheme, pageTitle = "DASHBOARD", 
           transition: opacity 0.2s;
         }
         .logo-text:hover { opacity: 0.8; }
+        .cursor { display: inline-block; width: 2px; height: 1.2rem; background: #f0a030; margin-left: 2px; vertical-align: middle; animation: cursorBlink 0.6s ease infinite; }
+        .page-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 4px; background: linear-gradient(90deg, #e63232, #f0a030, #e63232); background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradFlow 3s linear infinite; }
+        .page-subtitle { font-size: 0.52rem; letter-spacing: 3px; text-transform: uppercase; color: #a89888; font-family: 'Inter', sans-serif; margin-top: 2px; font-weight: 600; }
 
-        .cursor {
-          display: inline-block; width: 2px; height: 1.2rem;
-          background: #f0a030; margin-left: 2px; vertical-align: middle;
-          animation: cursorBlink 0.6s ease infinite;
-        }
+        /* DEV avatar */
+        .dev-avatar-wrapper { position: relative; width: 48px; height: 48px; flex-shrink: 0; }
+        .dev-avatar-wrapper::before { content: ''; position: absolute; inset: -2px; border-radius: 50%; background: conic-gradient(#f0a030, #e63232, #ffffff, #e63232, #f0a030); animation: rootAvatarSpin 2s linear infinite; z-index: 0; }
+        .dev-avatar-inner { position: absolute; inset: 2px; border-radius: 50%; background: linear-gradient(135deg, #2a1a08, #1a0808); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 800; color: #f0a030; font-family: 'Bebas Neue', sans-serif; z-index: 1; animation: rootAvatarPulse 2s ease-in-out infinite; }
 
-        .page-title {
-          font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 4px;
-          background: linear-gradient(90deg, #e63232, #f0a030, #e63232);
-          background-size: 200%;
-          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-          animation: gradFlow 3s linear infinite;
-        }
-        .page-subtitle {
-          font-size: 0.52rem; letter-spacing: 3px; text-transform: uppercase;
-          color: #a89888; font-family: 'Inter', sans-serif; margin-top: 2px; font-weight: 600;
-        }
+        /* Normal avatar */
+        .normal-avatar-wrapper { position: relative; width: 48px; height: 48px; flex-shrink: 0; }
+        .normal-avatar-inner { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #e63232, #f0a030); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 800; color: #fff; font-family: 'Bebas Neue', sans-serif; }
 
-        .root-avatar-wrapper-lg {
-          position: relative; width: 48px; height: 48px; flex-shrink: 0;
-        }
-        .root-avatar-wrapper-lg::before {
-          content: ''; position: absolute; inset: -2px; border-radius: 50%;
-          background: conic-gradient(#f0a030, #e63232, #ffffff, #e63232, #f0a030);
-          animation: rootAvatarSpin 2s linear infinite; z-index: 0;
-        }
-        .root-avatar-inner-lg {
-          position: absolute; inset: 2px; border-radius: 50%;
-          background: linear-gradient(135deg, #2a1a08, #1a0808);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 1.2rem; font-weight: 800; color: #f0a030;
-          font-family: 'Bebas Neue', sans-serif; z-index: 1;
-          animation: rootAvatarPulse 2s ease-in-out infinite;
-        }
+        .dev-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 2px; background: linear-gradient(90deg, #f0a030, #fff, #e63232, #f0a030, #fff, #e63232); background-size: 300% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: rootTextShift 3s ease infinite; }
+        .normal-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 2px; color: #e0d8d0; }
 
-        .root-name-lg {
-          font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 2px;
-          background: linear-gradient(90deg, #f0a030, #fff, #e63232, #f0a030, #fff, #e63232);
-          background-size: 300% auto;
-          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-          animation: rootTextShift 3s ease infinite;
-        }
-        .root-badge {
-          font-size: 0.55rem; padding: 2px 7px; border-radius: 4px;
-          background: linear-gradient(90deg, rgba(240,160,48,0.35), rgba(230,50,50,0.25), rgba(240,160,48,0.35));
-          background-size: 200% auto;
-          border: 1px solid rgba(240,160,48,0.7);
-          color: #f0a030; font-weight: 800; letter-spacing: 2px;
-          font-family: 'Inter', sans-serif; text-transform: uppercase;
-          animation: rootBadgeShimmer 2s linear infinite;
-          box-shadow: 0 0 8px rgba(240,160,48,0.3), 0 0 16px rgba(230,50,50,0.1);
-        }
+        .dev-badge { font-size: 0.55rem; padding: 2px 7px; border-radius: 4px; background: linear-gradient(90deg, rgba(240,160,48,0.35), rgba(230,50,50,0.25), rgba(240,160,48,0.35)); background-size: 200% auto; border: 1px solid rgba(240,160,48,0.7); color: #f0a030; font-weight: 800; letter-spacing: 2px; font-family: 'Inter', sans-serif; text-transform: uppercase; animation: rootBadgeShimmer 2s linear infinite; box-shadow: 0 0 8px rgba(240,160,48,0.3), 0 0 16px rgba(230,50,50,0.1); }
 
         .slide-up-modal-nav { animation: slideUp 0.35s cubic-bezier(0.34,1.2,0.64,1) forwards; }
         .slide-right-nav    { animation: slideRight 0.35s ease forwards; }
-
         .action-btn-nav { transition: all 0.25s cubic-bezier(0.34,1.2,0.64,1); }
         .action-btn-nav:hover { transform: translateY(-2px); }
 
@@ -185,22 +162,14 @@ export default function AdminNavbarDark({ toggleTheme, pageTitle = "DASHBOARD", 
       `}</style>
 
       {/* NAVBAR */}
-      <nav style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "1.2rem 4rem",
-        background: "rgba(7,6,10,0.98)",
-        borderBottom: "1px solid rgba(230,50,50,0.12)",
-        position: "sticky", top: 0, zIndex: 100, flexShrink: 0
-      }}>
+      <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.2rem 4rem", background: "rgba(7,6,10,0.98)", borderBottom: "1px solid rgba(230,50,50,0.12)", position: "sticky", top: 0, zIndex: 100, flexShrink: 0 }}>
+
         {/* LEFT — Logo */}
         <div onClick={() => navigate("/admin")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}>
-          <div className="logo-text">
-            {displayText}
-            {spelling && <span className="cursor" />}
-          </div>
+          <div className="logo-text">{displayText}{spelling && <span className="cursor" />}</div>
         </div>
 
-        {/* CENTER — Page title */}
+        {/* CENTER */}
         <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", textAlign: "center" }}>
           <div className="page-title">{pageTitle}</div>
           <div className="page-subtitle">{pageSubtitle}</div>
@@ -239,27 +208,16 @@ export default function AdminNavbarDark({ toggleTheme, pageTitle = "DASHBOARD", 
             onMouseEnter={e => { e.currentTarget.style.background = "rgba(230,50,50,0.14)"; e.currentTarget.style.borderColor = "rgba(230,50,50,0.4)"; e.currentTarget.style.transform = "scale(1.02)"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "rgba(230,50,50,0.07)"; e.currentTarget.style.borderColor = "rgba(230,50,50,0.2)"; e.currentTarget.style.transform = "scale(1)"; }}
           >
-            <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "linear-gradient(135deg,#e63232,#f0a030)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.72rem", fontWeight: 700, color: "#fff", fontFamily: "'Inter',sans-serif", flexShrink: 0, boxShadow: "0 2px 8px rgba(230,50,50,0.3)" }}>AR</div>
-            <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "#e0d8d0", fontFamily: "'Inter',sans-serif" }}>Arnab</span>
+            <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "linear-gradient(135deg,#e63232,#f0a030)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.72rem", fontWeight: 700, color: "#fff", fontFamily: "'Inter',sans-serif", flexShrink: 0, boxShadow: "0 2px 8px rgba(230,50,50,0.3)" }}>{initials}</div>
+            <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "#e0d8d0", fontFamily: "'Inter',sans-serif" }}>{profileUser?.Name?.split(" ")[0] || "Admin"}</span>
             <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#4aba4a", animation: "pulseG 2s infinite" }} />
           </div>
         </div>
       </nav>
 
-      {/* NOTIFICATION */}
+      {/* NOTIFICATION TOAST */}
       {notification && (
-        <div className="slide-right-nav" style={{
-          position: "fixed", top: "80px", right: "2rem", zIndex: 1001,
-          padding: "1rem 1.4rem", borderRadius: "10px",
-          background: notification.type === "success"
-            ? "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(74,222,128,0.06))"
-            : "linear-gradient(135deg, rgba(248,113,113,0.12), rgba(248,113,113,0.06))",
-          border: `1px solid ${notification.type === "success" ? "rgba(74,222,128,0.3)" : "rgba(248,113,113,0.3)"}`,
-          color: notification.type === "success" ? "#4ade80" : "#f87171",
-          backdropFilter: "blur(16px)",
-          boxShadow: `0 8px 32px ${notification.type === "success" ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)"}`,
-          display: "flex", alignItems: "center", gap: "0.8rem", minWidth: "260px"
-        }}>
+        <div className="slide-right-nav" style={{ position: "fixed", top: "80px", right: "2rem", zIndex: 1001, padding: "1rem 1.4rem", borderRadius: "10px", background: notification.type === "success" ? "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(74,222,128,0.06))" : "linear-gradient(135deg, rgba(248,113,113,0.12), rgba(248,113,113,0.06))", border: `1px solid ${notification.type === "success" ? "rgba(74,222,128,0.3)" : "rgba(248,113,113,0.3)"}`, color: notification.type === "success" ? "#4ade80" : "#f87171", backdropFilter: "blur(16px)", boxShadow: `0 8px 32px ${notification.type === "success" ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)"}`, display: "flex", alignItems: "center", gap: "0.8rem", minWidth: "260px" }}>
           <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: notification.type === "success" ? "rgba(74,222,128,0.15)" : "rgba(248,113,113,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem", flexShrink: 0 }}>
             {notification.type === "success" ? "✓" : "✕"}
           </div>
@@ -275,29 +233,28 @@ export default function AdminNavbarDark({ toggleTheme, pageTitle = "DASHBOARD", 
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}
           onClick={e => { if (e.target === e.currentTarget) { setProfileOpen(false); setIsEditing(false); } }}
         >
-          <div className="slide-up-modal-nav" style={{
-            background: "linear-gradient(145deg,#0f0d13,#0a0810)",
-            border: "1px solid rgba(240,160,48,0.35)",
-            borderRadius: "16px", width: "520px", maxHeight: "88vh", overflowY: "auto",
-            boxShadow: "0 30px 100px rgba(0,0,0,0.7), 0 0 60px rgba(240,160,48,0.08)"
-          }}>
-            <div style={{ height: "2px", background: "linear-gradient(90deg,#f0a030,#e63232,#fff,#e63232,#f0a030)", backgroundSize: "200%", animation: "gradFlow 3s linear infinite", borderRadius: "16px 16px 0 0" }} />
+          <div className="slide-up-modal-nav" style={{ background: "linear-gradient(145deg,#0f0d13,#0a0810)", border: `1px solid ${isDev ? "rgba(240,160,48,0.35)" : "rgba(255,255,255,0.08)"}`, borderRadius: "16px", width: "520px", maxHeight: "88vh", overflowY: "auto", boxShadow: isDev ? "0 30px 100px rgba(0,0,0,0.7), 0 0 60px rgba(240,160,48,0.08)" : "0 30px 100px rgba(0,0,0,0.7)" }}>
+            <div style={{ height: "2px", background: isDev ? "linear-gradient(90deg,#f0a030,#e63232,#fff,#e63232,#f0a030)" : "linear-gradient(90deg,#e63232,#f0a030,#e63232)", backgroundSize: "200%", animation: "gradFlow 3s linear infinite", borderRadius: "16px 16px 0 0" }} />
 
-            {/* HEADER */}
-            <div style={{ padding: "1.6rem 2rem", borderBottom: "1px solid rgba(240,160,48,0.15)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {/* MODAL HEADER */}
+            <div style={{ padding: "1.6rem 2rem", borderBottom: `1px solid ${isDev ? "rgba(240,160,48,0.15)" : "rgba(255,255,255,0.05)"}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                <div className="root-avatar-wrapper-lg">
-                  <div className="root-avatar-inner-lg">
-                    {profileUser.Name?.charAt(0).toUpperCase()}
+                {isDev ? (
+                  <div className="dev-avatar-wrapper">
+                    <div className="dev-avatar-inner">{initials}</div>
                   </div>
-                </div>
+                ) : (
+                  <div className="normal-avatar-wrapper">
+                    <div className="normal-avatar-inner">{initials}</div>
+                  </div>
+                )}
                 <div>
-                  <div style={{ fontSize: "0.55rem", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "4px", fontFamily: "'Inter',sans-serif", fontWeight: 600, color: "#f0a030" }}>
-                    👑 Root Administrator
+                  <div style={{ fontSize: "0.55rem", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "4px", fontFamily: "'Inter',sans-serif", fontWeight: 600, color: isDev ? "#f0a030" : "#a89888" }}>
+                    {isDev ? "👑 Root Administrator" : `${roleIcon(profileUser.Role)} Administrator`}
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span className="root-name-lg">{profileUser.Name}</span>
-                    <span className="root-badge">ROOT</span>
+                    <span className={isDev ? "dev-name" : "normal-name"}>{profileUser.Name}</span>
+                    {isDev && <span className="dev-badge">ROOT</span>}
                   </div>
                 </div>
               </div>
@@ -355,11 +312,24 @@ export default function AdminNavbarDark({ toggleTheme, pageTitle = "DASHBOARD", 
                 ))}
               </div>
 
-              {/* ACTIONS — Edit only, no Delete/Deactivate */}
-              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                {isEditing ? (
-                  <>
-                    <button onClick={() => setIsEditing(false)} className="action-btn-nav"
+              {/* ACTIONS */}
+              <div style={{ display: "flex", gap: "10px", justifyContent: "space-between", alignItems: "center" }}>
+                <button onClick={handleLogout} className="action-btn-nav"
+                  style={{ padding:"10px 20px", background:"rgba(248,113,113,0.07)", border:"1px solid rgba(248,113,113,0.2)", color:"#f87171", borderRadius:"8px", cursor:"pointer", fontSize:"0.82rem", fontFamily:"'Inter',sans-serif", display:"flex", alignItems:"center", gap:"8px", transition:"all 0.2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.background="rgba(248,113,113,0.15)"; e.currentTarget.style.borderColor="rgba(248,113,113,0.4)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background="rgba(248,113,113,0.07)"; e.currentTarget.style.borderColor="rgba(248,113,113,0.2)"; }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" stroke="#f87171" strokeWidth="1.5" strokeLinecap="round"/>
+                    <path d="M10 11l3-3-3-3" stroke="#f87171" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <line x1="13" y1="8" x2="6" y2="8" stroke="#f87171" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  Logout
+                </button>
+                <div style={{ display:"flex", gap:"10px" }}>
+                  {isEditing ? (
+                    <>
+                      <button onClick={() => setIsEditing(false)} className="action-btn-nav"
                       style={{ padding: "10px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#a89888", borderRadius: "8px", cursor: "pointer", fontSize: "0.82rem", fontFamily: "'Inter',sans-serif" }}
                       onMouseEnter={e => { e.currentTarget.style.color = "#e0d8d0"; e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
                       onMouseLeave={e => { e.currentTarget.style.color = "#a89888"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
@@ -371,7 +341,8 @@ export default function AdminNavbarDark({ toggleTheme, pageTitle = "DASHBOARD", 
                   <button onClick={() => setIsEditing(true)} className="action-btn-nav"
                     style={{ padding: "10px 24px", background: "linear-gradient(135deg,#e63232,#f0a030)", border: "none", color: "#fff", borderRadius: "8px", cursor: "pointer", fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Inter',sans-serif", boxShadow: "0 4px 20px rgba(230,50,50,0.25)" }}>Edit Profile</button>
                 )}
-              </div>
+                </div>  {/* closes inner flex */}
+              </div>    {/* closes space-between */}
             </div>
           </div>
         </div>

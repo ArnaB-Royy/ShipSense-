@@ -39,15 +39,25 @@ export default function AdminNavbarLight({ toggleTheme, pageTitle = "Dashboard",
     }, 12000);
     return () => clearInterval(interval);
   }, []);
+  useEffect(() => {
+    fetch("http://localhost:5000/api/auth/me", { credentials: "include" })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          setProfileUser(d.user);
+          setEditData({ ...d.user });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const openProfile = async () => {
     try {
-      const res = await fetch(`${API}?search=Juhi Thakur`);
+      const res = await fetch("http://localhost:5000/api/auth/me", { credentials: "include" });
       const data = await res.json();
-      const user = data.data?.find(u => u.Name === "Juhi Thakur" && u.Role === "admin");
-      if (user) {
-        setProfileUser(user);
-        setEditData({ ...user });
+      if (data.success) {
+        setProfileUser(data.user);
+        setEditData({ ...data.user });
         setIsEditing(false);
         setProfileOpen(true);
       }
@@ -72,6 +82,11 @@ export default function AdminNavbarLight({ toggleTheme, pageTitle = "Dashboard",
     } catch (err) {
       showNotification("error", "Failed to update profile");
     }
+  };
+  const handleLogout = async () => {
+    try { await fetch("http://localhost:5000/api/auth/logout", { method: "POST", credentials: "include" }); } catch (_) {}
+    localStorage.clear();
+    navigate("/");
   };
 
   const showNotification = (type, message) => {
@@ -245,8 +260,8 @@ export default function AdminNavbarLight({ toggleTheme, pageTitle = "Dashboard",
             onMouseEnter={e => { e.currentTarget.style.background = "rgba(201,132,138,0.22)"; e.currentTarget.style.borderColor = C.rose; e.currentTarget.style.transform = "scale(1.02)"; }}
             onMouseLeave={e => { e.currentTarget.style.background = C.roseLight; e.currentTarget.style.borderColor = C.borderRose; e.currentTarget.style.transform = "scale(1)"; }}
           >
-            <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: `linear-gradient(135deg,${C.rose},${C.gold})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.72rem", fontWeight: 700, color: "#fff", fontFamily: font.body, flexShrink: 0, boxShadow: `0 2px 8px rgba(201,132,138,0.3)` }}>JT</div>
-            <span style={{ fontSize: "0.82rem", fontWeight: 600, color: C.inkMid, fontFamily: font.body }}>Juii</span>
+            <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: `linear-gradient(135deg,${C.rose},${C.gold})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.72rem", fontWeight: 700, color: "#fff", fontFamily: font.body, flexShrink: 0, boxShadow: `0 2px 8px rgba(201,132,138,0.3)` }}>{profileUser?.Name?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2) || "AD"}</div>
+            <span style={{ fontSize: "0.82rem", fontWeight: 600, color: C.inkMid, fontFamily: font.body }}>{profileUser?.Name?.split(" ")[0] || "Admin"}</span>
             <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#5a9e5a", animation: "pulseG 2s infinite" }} />
           </div>
         </div>
@@ -362,25 +377,39 @@ export default function AdminNavbarLight({ toggleTheme, pageTitle = "Dashboard",
               </div>
 
               {/* ACTIONS */}
-              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                {isEditing ? (
-                  <>
-                    <button onClick={() => setIsEditing(false)} className="action-btn-nav-l"
-                      style={{ padding: "10px 20px", background: C.bgDeep, border: `1px solid ${C.border}`, color: C.inkMid, borderRadius: "8px", cursor: "pointer", fontSize: "0.82rem", fontFamily: font.body }}
-                      onMouseEnter={e => e.currentTarget.style.color = C.ink}
-                      onMouseLeave={e => e.currentTarget.style.color = C.inkMid}
-                    >Cancel</button>
-                    <button onClick={handleUpdate} className="action-btn-nav-l"
-                      style={{ padding: "10px 24px", background: `linear-gradient(135deg,${C.rose},${C.gold})`, border: "none", color: "#fff", borderRadius: "8px", cursor: "pointer", fontSize: "0.82rem", fontWeight: 700, fontFamily: font.body, boxShadow: `0 4px 20px rgba(201,132,138,0.25)` }}>Save Changes</button>
-                  </>
-                ) : (
-                  <button onClick={() => setIsEditing(true)} className="action-btn-nav-l"
-                    style={{ padding: "10px 24px", background: `linear-gradient(135deg,${C.rose},${C.gold})`, border: "none", color: "#fff", borderRadius: "8px", cursor: "pointer", fontSize: "0.82rem", fontWeight: 700, fontFamily: font.body, boxShadow: `0 4px 20px rgba(201,132,138,0.25)` }}>Edit Profile</button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+                <div style={{ display: "flex", gap: "10px", justifyContent: "space-between", alignItems: "center" }}>
+                  <button onClick={handleLogout} className="action-btn-nav-l"
+                    style={{ padding:"10px 20px", background:C.roseLight, border:`1px solid ${C.borderRose}`, color:C.rose, borderRadius:"8px", cursor:"pointer", fontSize:"0.82rem", fontFamily:font.body, display:"flex", alignItems:"center", gap:"8px", transition:"all 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.background="rgba(201,132,138,0.22)"}
+                    onMouseLeave={e => e.currentTarget.style.background=C.roseLight}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" stroke={C.rose} strokeWidth="1.5" strokeLinecap="round"/>
+                      <path d="M10 11l3-3-3-3" stroke={C.rose} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <line x1="13" y1="8" x2="6" y2="8" stroke={C.rose} strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    Logout
+                  </button>
+                <div style={{ display:"flex", gap:"10px" }}>
+                  {isEditing ? (
+                    <>
+                      <button onClick={() => { setIsEditing(false); setEditData({ ...profileUser }); }} className="action-btn-nav-l"
+                        style={{ padding:"10px 20px", background:C.bgDeep, border:`1px solid ${C.border}`, color:C.inkMid, borderRadius:"8px", cursor:"pointer", fontSize:"0.82rem", fontFamily:font.body }}
+                        onMouseEnter={e => e.currentTarget.style.color=C.ink}
+                        onMouseLeave={e => e.currentTarget.style.color=C.inkMid}
+                      >Cancel</button>
+                      <button onClick={handleUpdate} className="action-btn-nav-l"
+                        style={{ padding:"10px 24px", background:`linear-gradient(135deg,${C.rose},${C.gold})`, border:"none", color:"#fff", borderRadius:"8px", cursor:"pointer", fontSize:"0.82rem", fontWeight:700, fontFamily:font.body, boxShadow:`0 4px 20px rgba(201,132,138,0.25)` }}>Save Changes</button>
+                    </>
+                  ) : (
+                    <button onClick={() => setIsEditing(true)} className="action-btn-nav-l"
+                      style={{ padding:"10px 24px", background:`linear-gradient(135deg,${C.rose},${C.gold})`, border:"none", color:"#fff", borderRadius:"8px", cursor:"pointer", fontSize:"0.82rem", fontWeight:700, fontFamily:font.body, boxShadow:`0 4px 20px rgba(201,132,138,0.25)` }}>Edit Profile</button>
+                  )}
+                </div>  
+              </div>    
+            </div>      
+          </div>        
+        </div>          
       )}
     </>
   );

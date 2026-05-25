@@ -23,6 +23,7 @@ export default function AdminDashboardLight({ toggleTheme }) {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [animated, setAnimated] = useState(false);
+  const [userName, setUserName] = useState(localStorage.getItem("userName") || "");
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -38,6 +39,12 @@ export default function AdminDashboardLight({ toggleTheme }) {
       if (rJson.success) setReports(rJson.data);
       if (sJson.success) setShipments(sJson.data.slice(0, 8));
       setTimeout(() => setAnimated(true), 150);
+      const meRes = await fetch("http://localhost:5000/api/auth/me", { credentials: "include" });
+      const meJson = await meRes.json();
+      if (meJson.success) {
+        setUserName(meJson.user.Name);
+        localStorage.setItem("userName", meJson.user.Name);
+      }
     } catch (err) {
       console.error("Dashboard fetch error:", err);
     } finally {
@@ -176,7 +183,7 @@ export default function AdminDashboardLight({ toggleTheme }) {
           <div className="fade-up-dl" style={{ marginBottom: "1.6rem", position: "relative", zIndex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
               <div style={{ width: "24px", height: "2px", background: `linear-gradient(90deg,${C.rose},${C.gold})`, borderRadius: "2px" }} />
-              <span style={{ fontSize: "0.6rem", letterSpacing: "4px", textTransform: "uppercase", background: `linear-gradient(90deg,${C.rose},${C.gold})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>Welcome back, Juii</span>
+              <span style={{ fontSize: "0.6rem", letterSpacing: "4px", textTransform: "uppercase", background: `linear-gradient(90deg,${C.rose},${C.gold})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>Welcome back, {userName || "Admin"}</span>
             </div>
             <h1 style={{ fontFamily: font.heading, fontSize: "2.8rem", fontWeight: 600, background: `linear-gradient(135deg,${C.ink} 0%,${C.inkMid} 50%,${C.rose} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", color: "transparent", letterSpacing: "1px", lineHeight: 1, margin: 0 }}>Admin Dashboard</h1>
             <div style={{ fontSize: "0.74rem", color: C.inkLight, marginTop: "6px", fontFamily: font.body }}>
@@ -362,7 +369,7 @@ export default function AdminDashboardLight({ toggleTheme }) {
                             {ship.Status}
                           </span>
                         </div>
-                        <div style={{ fontSize: "0.78rem", color: ship.DelayReason ? C.roseDark : C.inkFaint, fontFamily: font.body }}>{ship.DelayReason || "—"}</div>
+                        <div style={{ fontSize: "0.78rem", color: ship.DelayReason ? C.roseDark : C.inkFaint, fontFamily: font.body }}>{ship.DelayReason?.Code || "—"}</div>
                       </div>
                     );
                   })}

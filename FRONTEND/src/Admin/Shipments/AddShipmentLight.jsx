@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminNavbarLight from "../Components/AdminNavbarLight";
 import AdminSidebarLight from "../Components/AdminSidebarLight";
 
 const API = "http://localhost:5000/api/shipments";
+const USERS_API = "http://localhost:5000/api/users";
+const DELAYCODES_API = "http://localhost:5000/api/delaycodes";
 
 const C = {
   bg: "#faf6f0", bgDeep: "#f3ede4", bgCard: "rgba(255,250,245,0.85)",
@@ -22,7 +24,21 @@ export default function AddShipmentLight({ toggleTheme }) {
   const [formData, setFormData] = useState({
     Supplier: "", Origin: "", Destination: "",
     ETA: "", Status: "In Transit", DelayReason: "", DelayDuration: 0,
+    AssignedCustomer: "",
   });
+  const [customers, setCustomers] = useState([]);
+  const [delayCodes, setDelayCodes] = useState([]);
+
+  useEffect(() => {
+    fetch(`${USERS_API}?Role=customer`, { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (d.success) setCustomers(d.data); })
+      .catch(() => {});
+    fetch(DELAYCODES_API, { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (d.success) setDelayCodes(d.data); })
+      .catch(() => {});
+  }, []);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -74,6 +90,7 @@ export default function AddShipmentLight({ toggleTheme }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        credentials: "include",
       });
       const data = await res.json();
       if (data.success) {
@@ -105,6 +122,8 @@ export default function AddShipmentLight({ toggleTheme }) {
   };
 
   const filled = formData.Supplier.trim() && formData.Origin.trim() && formData.Destination.trim() && formData.ETA;
+  const selectedCustomerName = customers.find(c => c._id === formData.AssignedCustomer)?.Name || "";
+  const selectedDelayLabel = delayCodes.find(d => d._id === formData.DelayReason)?.Code || "";
 
   const statusColor = (s) => {
     if (s === "On Time") return "#5a9e5a";
@@ -248,6 +267,19 @@ export default function AddShipmentLight({ toggleTheme }) {
                   <input className="form-input-l" type="text" name="Supplier" placeholder="e.g. Juii Exports" value={formData.Supplier} onChange={handleChange} />
                 </div>
 
+                <div style={{ marginBottom: "1rem" }}>
+                  <label style={{ fontSize: "0.62rem", letterSpacing: "2px", textTransform: "uppercase", color: C.inkLight, marginBottom: "6px", display: "block", fontWeight: 600, fontFamily: font.body }}>
+                    Assigned Customer
+                    <span style={{ marginLeft: "8px", fontSize: "0.55rem", color: C.inkFaint, letterSpacing: "1px", textTransform: "none" }}>— Optional</span>
+                  </label>
+                  <select className="form-input-l" name="AssignedCustomer" value={formData.AssignedCustomer} onChange={handleChange}>
+                    <option value="">No customer assigned</option>
+                    {customers.map(c => (
+                      <option key={c._id} value={c._id}>{c.Name} ({c.Email})</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <div>
                     <label style={{ fontSize: "0.62rem", letterSpacing: "2px", textTransform: "uppercase", color: C.inkLight, marginBottom: "6px", display: "block", fontWeight: 600, fontFamily: font.body }}>Origin <span style={{ color: C.rose }}>*</span></label>
@@ -295,12 +327,9 @@ export default function AddShipmentLight({ toggleTheme }) {
                     <label style={{ fontSize: "0.62rem", letterSpacing: "2px", textTransform: "uppercase", color: C.inkLight, marginBottom: "6px", display: "block", fontWeight: 600, fontFamily: font.body }}>Delay Reason</label>
                     <select className="form-input-l" name="DelayReason" value={formData.DelayReason} onChange={handleChange}>
                       <option value="">None</option>
-                      <option value="Weather">Weather</option>
-                      <option value="Customs">Customs</option>
-                      <option value="Port Congestion">Port Congestion</option>
-                      <option value="Carrier Issue">Carrier Issue</option>
-                      <option value="Documentation">Documentation</option>
-                      <option value="Other">Other</option>
+                      {delayCodes.map(dc => (
+                        <option key={dc._id} value={dc._id}>{dc.Code} — {dc.Reason}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -322,12 +351,13 @@ export default function AddShipmentLight({ toggleTheme }) {
                 <div style={{ padding: "16px 18px" }}>
                   {[
                     { label: "Supplier", val: formData.Supplier },
+                    { label: "Customer", val: selectedCustomerName },
                     { label: "Route", val: formData.Origin && formData.Destination ? `${formData.Origin} → ${formData.Destination}` : "" },
                     { label: "ETA", val: formData.ETA ? new Date(formData.ETA).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "" },
                     { label: "Status", val: formData.Status, color: statusColor(formData.Status) },
-                    { label: "Delay", val: formData.DelayReason || "" },
+                    { label: "Delay Code", val: selectedDelayLabel },
                   ].map((item, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 4 ? `1px solid ${C.border}` : "none" }}>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 5 ? `1px solid ${C.border}` : "none" }}>
                       <span style={{ fontSize: "0.65rem", letterSpacing: "1.5px", textTransform: "uppercase", color: C.inkFaint, fontFamily: font.body }}>{item.label}</span>
                       <span style={{ fontSize: "0.82rem", color: item.val ? (item.color || C.inkMid) : C.inkFaint, fontWeight: item.val ? 500 : 400, fontFamily: font.body }}>{item.val || "—"}</span>
                     </div>

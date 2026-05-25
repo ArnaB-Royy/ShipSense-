@@ -13,6 +13,7 @@ export default function AdminDashboardDark({ toggleTheme }) {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [animated, setAnimated]   = useState(false);
+  const [userName, setUserName]   = useState(localStorage.getItem("userName") || "");
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -28,6 +29,12 @@ export default function AdminDashboardDark({ toggleTheme }) {
       if (rJson.success) setReports(rJson.data);
       if (sJson.success) setShipments(sJson.data.slice(0, 8));
       setTimeout(() => setAnimated(true), 150);
+      const meRes = await fetch("http://localhost:5000/api/auth/me", { credentials: "include" });
+      const meJson = await meRes.json();
+      if (meJson.success) {
+        setUserName(meJson.user.Name);
+        localStorage.setItem("userName", meJson.user.Name);
+      }
     } catch (err) {
       console.error("Dashboard fetch error:", err);
     } finally {
@@ -177,7 +184,7 @@ export default function AdminDashboardDark({ toggleTheme }) {
           <div className="fade-up-d" style={{ marginBottom: "1.6rem", position: "relative", zIndex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
               <div style={{ width: "24px", height: "2px", background: "linear-gradient(90deg,#e63232,#f0a030)", borderRadius: "2px" }} />
-              <span style={{ fontSize: "0.6rem", letterSpacing: "4px", textTransform: "uppercase", background: "linear-gradient(90deg,#e63232,#f0a030)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>Welcome back, Arnab</span>
+              <span style={{ fontSize: "0.6rem", letterSpacing: "4px", textTransform: "uppercase", background: "linear-gradient(90deg,#e63232,#f0a030)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>Welcome back, {userName || "Admin"}</span>
             </div>
             <h1 style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: "2.8rem", background: "linear-gradient(135deg,#ffffff 0%,#e0c8c0 50%,#f0a030 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", color: "transparent", letterSpacing: "3px", lineHeight: 1, margin: 0, display: "inline-block" }}>ADMIN DASHBOARD</h1>
             <div style={{ fontSize: "0.74rem", color: "#a89888", marginTop: "6px" }}>
@@ -363,7 +370,7 @@ export default function AdminDashboardDark({ toggleTheme }) {
                             {ship.Status}
                           </span>
                         </div>
-                        <div style={{ fontSize: "0.78rem", color: ship.DelayReason ? "#e63232" : "#3a2a25", fontFamily: "'Inter',sans-serif" }}>{ship.DelayReason || "—"}</div>
+                        <div style={{ fontSize: "0.78rem", color: ship.DelayReason ? "#e63232" : "#3a2a25", fontFamily: "'Inter',sans-serif" }}>{ship.DelayReason?.Code || "—"}</div>
                       </div>
                     );
                   })}

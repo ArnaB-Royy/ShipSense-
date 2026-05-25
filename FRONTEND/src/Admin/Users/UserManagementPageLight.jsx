@@ -30,6 +30,8 @@ export default function UserManagementPageLight({ toggleTheme }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [notification, setNotification] = useState(null);
   const [hoveredRow, setHoveredRow] = useState(null);
+  const [pwData, setPwData] = useState({ newPassword: "", confirmPassword: "" });
+  const [pwLoading, setPwLoading] = useState(false);
 
   useEffect(() => { fetchUsers(); }, [search, roleFilter, statusFilter]);
 
@@ -83,7 +85,34 @@ export default function UserManagementPageLight({ toggleTheme }) {
       showNotification("error", "Failed to delete user");
     }
   };
-
+  const handlePasswordChange = async () => {
+    if (!pwData.newPassword || !pwData.confirmPassword) {
+      showNotification("error", "Please fill both password fields!"); return;
+    }
+    if (pwData.newPassword.length < 6) {
+      showNotification("error", "Password must be at least 6 characters!"); return;
+    }
+    if (pwData.newPassword !== pwData.confirmPassword) {
+      showNotification("error", "Passwords don't match!"); return;
+    }
+    try {
+      setPwLoading(true);
+      const res = await fetch(`${API}/${selectedUser._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ Password: pwData.newPassword }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPwData({ newPassword: "", confirmPassword: "" });
+        showNotification("success", "Password changed successfully!");
+      }
+    } catch (err) {
+      showNotification("error", "Failed to change password");
+    } finally {
+      setPwLoading(false);
+    }
+  };
   const handleToggleActive = async (user) => {
     try {
       const res = await fetch(`${API}/${user._id}`, {
@@ -421,7 +450,7 @@ export default function UserManagementPageLight({ toggleTheme }) {
           {/* DETAIL CARD */}
           {selectedUser && (
             <div style={{ position: "fixed", inset: 0, background: "rgba(46,34,24,0.4)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}
-              onClick={e => { if (e.target === e.currentTarget) { setSelectedUser(null); setIsEditing(false); setShowDeleteConfirm(false); } }}
+              onClick={e => { if (e.target === e.currentTarget) { setSelectedUser(null); setIsEditing(false); setShowDeleteConfirm(false); setPwData({ newPassword: "", confirmPassword: "" }); } }}
             >
               <div className="slide-up-modal-uml" style={{ background: C.bgCard, border: `1px solid ${isRoot(selectedUser) ? "rgba(201,132,138,0.4)" : C.borderRose}`, borderRadius: "16px", width: "520px", maxHeight: "88vh", overflowY: "auto", boxShadow: isRoot(selectedUser) ? "0 30px 100px rgba(46,34,24,0.2), 0 0 60px rgba(201,132,138,0.08)" : "0 30px 100px rgba(46,34,24,0.2)" }}>
                 <div style={{ height: "2px", background: isRoot(selectedUser) ? `linear-gradient(90deg,${C.rose},${C.gold},#fff,${C.gold},${C.rose})` : `linear-gradient(90deg,${C.rose},${C.gold},${C.rose})`, backgroundSize: "200%", animation: "gradFlow 3s linear infinite", borderRadius: "16px 16px 0 0" }} />
@@ -460,7 +489,7 @@ export default function UserManagementPageLight({ toggleTheme }) {
                         {roleIcon(selectedUser.Role)} {selectedUser.Role}
                       </span>
                     ); })()}
-                    <button onClick={() => { setSelectedUser(null); setIsEditing(false); setShowDeleteConfirm(false); }}
+                    <button onClick={() => { setSelectedUser(null); setIsEditing(false); setShowDeleteConfirm(false); setPwData({ newPassword: "", confirmPassword: "" }); }}
                       style={{ background: C.bgDeep, border: `1px solid ${C.border}`, color: C.inkLight, width: "34px", height: "34px", borderRadius: "50%", cursor: "pointer", fontSize: "0.9rem", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
                       onMouseEnter={e => { e.currentTarget.style.background = C.roseLight; e.currentTarget.style.color = C.rose; e.currentTarget.style.borderColor = C.borderRose; }}
                       onMouseLeave={e => { e.currentTarget.style.background = C.bgDeep; e.currentTarget.style.color = C.inkLight; e.currentTarget.style.borderColor = C.border; }}
@@ -526,7 +555,30 @@ export default function UserManagementPageLight({ toggleTheme }) {
                           </div>
                         ))}
                       </div>
-
+                      {/* CHANGE PASSWORD SECTION */}
+                      {!showDeleteConfirm && (
+                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "10px", padding: "1.2rem", marginBottom: "1.5rem" }}>
+                          <div style={{ fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", color: "#6a5a50", marginBottom: "1rem", fontFamily: "'Inter',sans-serif", fontWeight: 700 }}>Change Password</div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+                            <div>
+                              <div style={{ fontSize: "0.58rem", letterSpacing: "1.5px", textTransform: "uppercase", color: "#5a4a45", marginBottom: "6px", fontFamily: "'Inter',sans-serif", fontWeight: 600 }}>New Password</div>
+                              <input type="password" placeholder="Min 6 characters" value={pwData.newPassword}
+                                onChange={e => setPwData({ ...pwData, newPassword: e.target.value })}
+                                style={{ width: "100%", padding: "10px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", color: "#e0d8d0", fontSize: "0.84rem", fontFamily: "'Inter',sans-serif", boxSizing: "border-box" }} />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: "0.58rem", letterSpacing: "1.5px", textTransform: "uppercase", color: "#5a4a45", marginBottom: "6px", fontFamily: "'Inter',sans-serif", fontWeight: 600 }}>Confirm Password</div>
+                              <input type="password" placeholder="Repeat password" value={pwData.confirmPassword}
+                                onChange={e => setPwData({ ...pwData, confirmPassword: e.target.value })}
+                                style={{ width: "100%", padding: "10px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", color: "#e0d8d0", fontSize: "0.84rem", fontFamily: "'Inter',sans-serif", boxSizing: "border-box" }} />
+                            </div>
+                          </div>
+                          <button onClick={handlePasswordChange} disabled={pwLoading}
+                            style={{ padding: "9px 20px", background: pwData.newPassword && pwData.confirmPassword ? "linear-gradient(135deg,#e63232,#f0a030)" : "rgba(255,255,255,0.03)", border: pwData.newPassword && pwData.confirmPassword ? "none" : "1px solid rgba(255,255,255,0.06)", color: pwData.newPassword && pwData.confirmPassword ? "#fff" : "#4a3a35", borderRadius: "8px", cursor: pwData.newPassword && pwData.confirmPassword ? "pointer" : "not-allowed", fontSize: "0.78rem", fontWeight: 700, fontFamily: "'Inter',sans-serif", letterSpacing: "1px" }}>
+                            {pwLoading ? "Saving..." : "Set New Password"}
+                          </button>
+                        </div>
+                      )}
                       <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                         {isEditing ? (
                           <>

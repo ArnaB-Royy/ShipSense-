@@ -28,8 +28,8 @@ const ShipmentSchema = new mongoose.Schema({
     default: "In Transit",
   },
   DelayReason: {
-    type: String,
-    enum: ["Weather", "Customs", "Port Congestion", "Carrier Issue", "Documentation", "Other", null],
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "DelayCode",
     default: null,
   },
   DelayDuration: {
@@ -39,6 +39,11 @@ const ShipmentSchema = new mongoose.Schema({
   CreatedBy: {
     type: String,
     default: "admin",
+  },
+  AssignedCustomer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
   },
 }, { timestamps: true });
 

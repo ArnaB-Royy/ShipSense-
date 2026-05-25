@@ -4,6 +4,8 @@ import AdminNavbarLight from "../Components/AdminNavbarLight";
 import AdminSidebarLight from "../Components/AdminSidebarLight";
 
 const API = "http://localhost:5000/api/shipments";
+const USERS_API = "http://localhost:5000/api/users";
+const DELAYCODES_API = "http://localhost:5000/api/delaycodes";
 const STATUSES = ["All", "In Transit", "On Time", "Delayed", "Delivered"];
 
 const C = {
@@ -28,6 +30,19 @@ export default function ShipmentsPageLight({ toggleTheme }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [notification, setNotification] = useState(null);
   const [hoveredRow, setHoveredRow] = useState(null);
+  const [customers, setCustomers] = useState([]);
+  const [delayCodes, setDelayCodes] = useState([]);
+
+  useEffect(() => {
+    fetch(`${USERS_API}?Role=customer`, { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (d.success) setCustomers(d.data); })
+      .catch(() => {});
+    fetch(DELAYCODES_API, { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (d.success) setDelayCodes(d.data); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => { fetchShipments(); }, [search, statusFilter]);
 
@@ -37,7 +52,7 @@ export default function ShipmentsPageLight({ toggleTheme }) {
       let url = `${API}?`;
       if (search) url += `search=${search}&`;
       if (statusFilter !== "All") url += `Status=${statusFilter}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { credentials: "include" });
       const data = await res.json();
       setShipments(data.data);
     } catch (err) {
@@ -47,18 +62,27 @@ export default function ShipmentsPageLight({ toggleTheme }) {
     }
   };
 
+
   const handleUpdate = async () => {
     try {
+      const payload = {
+        ...editData,
+        AssignedCustomer: editData.AssignedCustomer?._id || editData.AssignedCustomer || null,
+        DelayReason: editData.DelayReason?._id || editData.DelayReason || null,
+      };
       const res = await fetch(`${API}/${selectedShipment.ShipmentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editData),
+        credentials: "include",
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
-        setSelectedShipment(data.data);
+        await fetchShipments();
+        const fresh = await fetch(`${API}/${selectedShipment.ShipmentId}`, { credentials: "include" });
+        const freshData = await fresh.json();
+        if (freshData.success) setSelectedShipment(freshData.data);
         setIsEditing(false);
-        fetchShipments();
         showNotification("success", "Shipment updated successfully!");
       }
     } catch (err) {
@@ -68,7 +92,7 @@ export default function ShipmentsPageLight({ toggleTheme }) {
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`${API}/${selectedShipment.ShipmentId}`, { method: "DELETE" });
+      const res = await fetch(`${API}/${selectedShipment.ShipmentId}`, { method: "DELETE", credentials: "include" });
       const data = await res.json();
       if (data.success) {
         setSelectedShipment(null);
@@ -79,6 +103,12 @@ export default function ShipmentsPageLight({ toggleTheme }) {
     } catch (err) {
       showNotification("error", "Failed to delete shipment");
     }
+  };
+
+  const delayLabel = (dr) => {
+    if (!dr) return null;
+    if (typeof dr === "object") return dr.Code;
+    return dr;
   };
 
   const showNotification = (type, message) => {
@@ -244,8 +274,8 @@ export default function ShipmentsPageLight({ toggleTheme }) {
             <div style={{ height: "2px", background: `linear-gradient(90deg,${C.rose},${C.gold},${C.rose})`, backgroundSize: "200%", animation: "gradFlow 3s linear infinite" }} />
 
             {/* Header */}
-            <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 1.2fr 140px 140px 160px 80px", padding: "12px 20px", background: C.bgDeep, borderBottom: `1px solid ${C.border}` }}>
-              {["Shipment ID", "Supplier", "Route", "ETA", "Status", "Delay Reason", "Delay"].map(h => (
+            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr 1fr 1.2fr 130px 130px 140px 70px", padding: "12px 20px", background: C.bgDeep, borderBottom: `1px solid ${C.border}` }}>
+              {["Shipment ID", "Supplier", "Customer", "Route", "ETA", "Status", "Delay Code", "Delay"].map(h => (
                 <div key={h} style={{ fontSize: "0.6rem", letterSpacing: "2.5px", textTransform: "uppercase", color: C.inkFaint, fontFamily: font.body, fontWeight: 700 }}>{h}</div>
               ))}
             </div>
@@ -270,10 +300,11 @@ export default function ShipmentsPageLight({ toggleTheme }) {
                     onMouseEnter={() => setHoveredRow(i)}
                     onMouseLeave={() => setHoveredRow(null)}
                     onClick={() => { setSelectedShipment(s); setEditData({ ...s }); setIsEditing(false); setShowDeleteConfirm(false); }}
-                    style={{ display: "grid", gridTemplateColumns: "120px 1fr 1.2fr 140px 140px 160px 80px", padding: "14px 20px", alignItems: "center", borderBottom: i < shipments.length - 1 ? `1px solid ${C.border}` : "none", animation: `rowIn 0.3s ${i * 0.04}s ease forwards`, opacity: 0 }}
+                    style={{ display: "grid", gridTemplateColumns: "110px 1fr 1fr 1.2fr 130px 130px 140px 70px", padding: "14px 20px", alignItems: "center", borderBottom: i < shipments.length - 1 ? `1px solid ${C.border}` : "none", animation: `rowIn 0.3s ${i * 0.04}s ease forwards`, opacity: 0 }}
                   >
                     <div style={{ fontFamily: font.heading, fontSize: "1rem", fontWeight: 600, fontStyle: "italic", background: `linear-gradient(135deg,${C.rose},${C.gold})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{s.ShipmentId}</div>
                     <div className="cell-main-l" style={{ fontSize: "0.84rem", color: C.inkMid, fontFamily: font.body, transition: "color 0.15s", fontWeight: 500 }}>{s.Supplier}</div>
+                    <div style={{ fontSize: "0.82rem", color: s.AssignedCustomer ? "#8b7cf8" : C.inkFaint, fontFamily: font.body, fontWeight: s.AssignedCustomer ? 500 : 400 }}>{s.AssignedCustomer?.Name || "—"}</div>
                     <div style={{ fontSize: "0.84rem", fontFamily: font.body, display: "flex", alignItems: "center", gap: "6px" }}>
                       <span className="cell-dim-l" style={{ color: C.inkLight, transition: "color 0.15s" }}>{s.Origin}</span>
                       <span style={{ color: C.rose, fontSize: "0.75rem", fontWeight: 700 }}>→</span>
@@ -286,7 +317,7 @@ export default function ShipmentsPageLight({ toggleTheme }) {
                         {s.Status}
                       </span>
                     </div>
-                    <div style={{ fontSize: "0.84rem", color: s.DelayReason ? C.rose : C.inkFaint, fontFamily: font.body }}>{s.DelayReason || "—"}</div>
+                    <div style={{ fontSize: "0.78rem", color: delayLabel(s.DelayReason) ? C.rose : C.inkFaint, fontFamily: font.body, fontWeight: delayLabel(s.DelayReason) ? 600 : 400 }}>{delayLabel(s.DelayReason) || "—"}</div>
                     <div style={{ fontSize: "0.84rem", fontFamily: font.body, fontWeight: s.DelayDuration > 0 ? 700 : 400, color: s.DelayDuration > 0 ? C.rose : C.inkFaint }}>{s.DelayDuration > 0 ? `+${s.DelayDuration}h` : "—"}</div>
                   </div>
                 );
@@ -351,7 +382,6 @@ export default function ShipmentsPageLight({ toggleTheme }) {
                           { label: "Destination", key: "Destination", type: "text" },
                           { label: "ETA", key: "ETA", type: "date" },
                           { label: "Status", key: "Status", type: "select", options: ["In Transit", "On Time", "Delayed", "Delivered"] },
-                          { label: "Delay Reason", key: "DelayReason", type: "select", options: ["", "Weather", "Customs", "Port Congestion", "Carrier Issue", "Documentation", "Other"] },
                           { label: "Delay Duration (hrs)", key: "DelayDuration", type: "number" },
                         ].map(field => (
                           <div key={field.key} style={{ gridColumn: field.full ? "1/3" : "auto" }}>
@@ -371,6 +401,72 @@ export default function ShipmentsPageLight({ toggleTheme }) {
                             )}
                           </div>
                         ))}
+                      
+
+                      {/* DELAY CODE */}
+                        <div style={{ gridColumn: "1/3" }}>
+                          <div style={{ fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", color: C.inkFaint, marginBottom: "6px", fontFamily: font.body, fontWeight: 600 }}>Delay Code</div>
+                          {isEditing ? (
+                            <select
+                              value={editData.DelayReason?._id || editData.DelayReason || ""}
+                              onChange={e => setEditData({ ...editData, DelayReason: e.target.value || null })}
+                              style={{ width: "100%", padding: "10px 12px", background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: "8px", color: C.ink, fontSize: "0.84rem", fontFamily: font.body, boxSizing: "border-box" }}
+                            >
+                              <option value="">None</option>
+                              {delayCodes.map(dc => (
+                                <option key={dc._id} value={dc._id}>{dc.Code} — {dc.Reason}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            selectedShipment.DelayReason ? (
+                              <div style={{ padding: "10px 12px", background: C.roseLight, border: `1px solid ${C.borderRose}`, borderRadius: "8px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                                <div>
+                                  <div style={{ fontSize: "0.55rem", letterSpacing: "2px", textTransform: "uppercase", color: C.inkFaint, marginBottom: "3px", fontFamily: font.body }}>Code</div>
+                                  <div style={{ fontSize: "0.88rem", color: C.rose, fontWeight: 700, fontFamily: font.body }}>{selectedShipment.DelayReason.Code}</div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: "0.55rem", letterSpacing: "2px", textTransform: "uppercase", color: C.inkFaint, marginBottom: "3px", fontFamily: font.body }}>Category</div>
+                                  <div style={{ fontSize: "0.88rem", color: C.inkMid, fontFamily: font.body }}>{selectedShipment.DelayReason.Category}</div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: "0.55rem", letterSpacing: "2px", textTransform: "uppercase", color: C.inkFaint, marginBottom: "3px", fontFamily: font.body }}>Reason</div>
+                                  <div style={{ fontSize: "0.88rem", color: C.inkMid, fontFamily: font.body }}>{selectedShipment.DelayReason.Reason}</div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: "0.55rem", letterSpacing: "2px", textTransform: "uppercase", color: C.inkFaint, marginBottom: "3px", fontFamily: font.body }}>Severity</div>
+                                  <div style={{ fontSize: "0.88rem", fontWeight: 600, fontFamily: font.body, color: selectedShipment.DelayReason.Severity === "High" ? C.rose : selectedShipment.DelayReason.Severity === "Medium" ? C.gold : "#5a9e5a" }}>{selectedShipment.DelayReason.Severity}</div>
+                                </div>
+                                <div style={{ gridColumn: "1/3" }}>
+                                  <div style={{ fontSize: "0.55rem", letterSpacing: "2px", textTransform: "uppercase", color: C.inkFaint, marginBottom: "3px", fontFamily: font.body }}>Avg Delay</div>
+                                  <div style={{ fontSize: "0.88rem", color: C.inkMid, fontFamily: font.body }}>{selectedShipment.DelayReason.AverageDelayHours} hrs</div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: "0.9rem", color: C.inkFaint, fontFamily: font.body, padding: "8px 12px", background: C.bgDeep, borderRadius: "6px", border: `1px solid ${C.border}` }}>—</div>
+                            )
+                          )}
+                        </div>
+
+                        {/* ASSIGNED CUSTOMER */}
+                        <div style={{ gridColumn: "1/3" }}>
+                          <div style={{ fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", color: C.inkFaint, marginBottom: "6px", fontFamily: font.body, fontWeight: 600 }}>Assigned Customer</div>
+                          {isEditing ? (
+                            <select
+                              value={editData.AssignedCustomer?._id || editData.AssignedCustomer || ""}
+                              onChange={e => setEditData({ ...editData, AssignedCustomer: e.target.value })}
+                              style={{ width: "100%", padding: "10px 12px", background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: "8px", color: C.ink, fontSize: "0.84rem", fontFamily: font.body, boxSizing: "border-box" }}
+                            >
+                              <option value="">No customer assigned</option>
+                              {customers.map(c => (
+                                <option key={c._id} value={c._id}>{c.Name} ({c.Email})</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <div style={{ fontSize: "0.9rem", fontFamily: font.body, padding: "8px 12px", background: C.bgDeep, borderRadius: "6px", border: `1px solid ${C.border}`, color: selectedShipment.AssignedCustomer ? "#8b7cf8" : C.inkFaint }}>
+                              {selectedShipment.AssignedCustomer ? `${selectedShipment.AssignedCustomer.Name} (${selectedShipment.AssignedCustomer.Email})` : "—"}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", padding: "1rem 1.2rem", background: C.bgDeep, borderRadius: "8px", marginBottom: "1.5rem", border: `1px solid ${C.border}` }}>
