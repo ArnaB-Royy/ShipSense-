@@ -63,8 +63,6 @@ export default function CustomerInvoicePageDark({ toggleTheme }) {
     const RX  = PW - MR;
     let y     = 0;
 
-    const shipIndex = shipments.findIndex(s => s._id === ship._id);
-    const signatory = SIGNATORIES[shipIndex % 2];
     const hasDelay  = !!ship.DelayReason?.Code;
     const subtotal  = hasDelay ? 5970 : 5370;
     const tax       = Math.round(subtotal * 0.18);
@@ -287,27 +285,56 @@ export default function CustomerInvoicePageDark({ toggleTheme }) {
         doc.text(doc.splitTextToSize(dText, CW - 14), ML + 7, y + 13);
         y += 26;
     }
-
+    
     // ── SIGNATURE ──
-    y += 8;
-    doc.setDrawColor(196, 163, 90);
-    doc.setLineWidth(0.4);
-    doc.line(RX - 62, y, RX, y);
+      y += 8;
+      const sigSpacing = CW / 2;
 
-    y += 5;
-    doc.setFontSize(14);
-    doc.setFont("times", "bolditalic");
-    doc.setTextColor(160, 80, 86);
-    doc.text(signatory.name, RX, y, { align: "right" });
+      const sigImages = [
+        { key: "arnab", path: "/src/assets/arnab.png" },
+        { key: "juhi",  path: "/src/assets/juhi.png"  },
+      ];
 
-    y += 5;
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(168, 145, 122);
-    doc.text(signatory.title,        RX, y, { align: "right" });
-    y += 4;
-    doc.text("Authorised Signatory", RX, y, { align: "right" });
+      for (let i = 0; i < SIGNATORIES.length; i++) {
+        const sig  = SIGNATORIES[i];
+        const sigX = ML + sigSpacing * i + sigSpacing / 2;
 
+        // load image as base64
+        await new Promise((resolve) => {
+          const img = new Image();
+          img.src = sigImages[i].path;
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width  = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext("2d").drawImage(img, 0, 0);
+            const b64 = canvas.toDataURL("image/png");
+            // draw signature image centered above the line
+            doc.addImage(b64, "PNG", sigX - 28, y - 14, 56, 14);
+            resolve();
+          };
+          img.onerror = () => resolve(); // skip if image fails
+        });
+
+        doc.setDrawColor(196, 163, 90);
+        doc.setLineWidth(0.4);
+        doc.line(sigX - 28, y, sigX + 28, y);
+
+        doc.setFontSize(8.5);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(46, 34, 24);
+        doc.text(sig.name, sigX, y + 5, { align: "center" });
+
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(168, 145, 122);
+        doc.text(sig.title,              sigX, y + 10, { align: "center" });
+        doc.text("Authorised Signatory", sigX, y + 14, { align: "center" });
+      }
+
+      y += 22;
+    
+    
     // ── FOOTER (light) ──
     doc.setFillColor(243, 237, 228);
     doc.rect(0, PH - 14, PW, 14, "F");
