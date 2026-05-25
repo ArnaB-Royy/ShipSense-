@@ -120,7 +120,7 @@ export default function HomePageLight({ toggleTheme }) {
             <div className="toggle-track"><div className="toggle-thumb" /></div>
             <span style={{ fontSize: "0.85rem" }}>☀️</span>
           </div>
-          <button style={{
+          <button onClick={() => navigate("/login")} style={{
             background: `linear-gradient(135deg, ${C.rose}, ${C.gold})`,
             color: "#fff", border: "none", padding: "0.65rem 1.8rem",
             fontSize: "0.75rem", fontWeight: 600, letterSpacing: "2px",
@@ -167,7 +167,7 @@ export default function HomePageLight({ toggleTheme }) {
             Intelligent ETA prediction and delay analysis for supply chains that demand precision. When a shipment moves, you know. When it doesn't, you know why.
           </p>
           <div style={{ display: "flex", gap: "1rem" }}>
-            <button style={{ background: `linear-gradient(135deg, ${C.rose}, ${C.gold})`, color: "#fff", border: "none", padding: "1rem 2.5rem", fontSize: "0.82rem", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", cursor: "pointer", borderRadius: "2px", fontFamily: font.body, ...hover }}
+            <button onClick={() => navigate("/login")} style={{ background: `linear-gradient(135deg, ${C.rose}, ${C.gold})`, color: "#fff", border: "none", padding: "1rem 2.5rem", fontSize: "0.82rem", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", cursor: "pointer", borderRadius: "2px", fontFamily: font.body, ...hover }}
               onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05) translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 30px rgba(201,132,138,0.35)`; }}
               onMouseLeave={e => { e.currentTarget.style.transform = "scale(1) translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
             >Get Started</button>
